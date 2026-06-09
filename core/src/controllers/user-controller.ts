@@ -1,7 +1,7 @@
 import { errorHandler } from "../utils/errorHandler"
 import User, { IUser } from "../models/user-model"
 import { Request, Response } from "express"
-import { v2 as cloudinary } from "cloudinary"
+import { uploadToR2, deleteFromR2 } from "../utils/storage"
 import Notification from "../models/notification-model"
 import bcrypt from "bcrypt"
 
@@ -160,27 +160,15 @@ const updateUserProfile = async (
 
     if (profileImg && profileImg !== user.profileImg) {
       if (user.profileImg) {
-        const publicId = user.profileImg.split("/").pop()?.split(".")[0]
-        if (publicId) {
-          await cloudinary.uploader.destroy(`cuez/profile-images/${publicId}`)
-        }
+        await deleteFromR2(user.profileImg)
       }
-      const uploadedImg = await cloudinary.uploader.upload(profileImg, {
-        folder: "cuez/profile-images",
-      })
-      user.profileImg = uploadedImg.secure_url
+      user.profileImg = await uploadToR2(profileImg, "cuez/profile-images")
     }
     if (coverImg && coverImg !== user.coverImg) {
       if (user.coverImg) {
-        const publicId = user.coverImg.split("/").pop()?.split(".")[0]
-        if (publicId) {
-          await cloudinary.uploader.destroy(`cuez/cover-images/${publicId}`)
-        }
+        await deleteFromR2(user.coverImg)
       }
-      const uploadedImg = await cloudinary.uploader.upload(coverImg, {
-        folder: "cuez/cover-images",
-      })
-      user.coverImg = uploadedImg.secure_url
+      user.coverImg = await uploadToR2(coverImg, "cuez/cover-images")
     }
 
     user.fullName = fullName || user.fullName

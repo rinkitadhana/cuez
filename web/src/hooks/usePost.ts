@@ -17,8 +17,6 @@ const getPosts = async (feedType: string): Promise<GetPostsResponse> => {
         return "/post/all-posts"
       case "Following":
         return "/post/following-posts"
-      case "Trending":
-        return "/post/trending-posts"
       default:
         return "/post/all-posts"
     }

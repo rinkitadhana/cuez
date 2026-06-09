@@ -2,7 +2,7 @@ import { Request, Response } from "express"
 import User from "../models/user-model"
 import { errorHandler } from "../utils/errorHandler"
 import Post from "../models/post-model"
-import { v2 as cloudinary } from "cloudinary"
+import { uploadToR2, deleteFromR2 } from "../utils/storage"
 import Notification from "../models/notification-model"
 
 const createPost = async (req: Request, res: Response): Promise<void> => {
@@ -28,19 +28,11 @@ const createPost = async (req: Request, res: Response): Promise<void> => {
     } = { user: user._id }
 
     if (img) {
-      const uploaded = await cloudinary.uploader.upload(img, {
-        folder: "cuez/posts",
-        resource_type: "image",
-      })
-      postData.img = uploaded.secure_url
+      postData.img = await uploadToR2(img, "cuez/posts")
     }
 
     if (video) {
-      const uploaded = await cloudinary.uploader.upload(video, {
-        folder: "cuez/posts",
-        resource_type: "video",
-      })
-      postData.video = uploaded.secure_url
+      postData.video = await uploadToR2(video, "cuez/posts")
     }
 
     if (text) postData.text = text
@@ -111,47 +103,17 @@ const editPost = async (req: Request, res: Response): Promise<void> => {
 
     if (img && img !== post.img) {
       if (post.img) {
-        const imageId = post.img.split("/").pop()?.split(".")[0]
-        if (imageId) {
-          try {
-            await cloudinary.uploader.destroy(`cuez/posts/${imageId}`, {
-              resource_type: "image",
-              invalidate: true,
-            })
-          } catch (error) {
-            console.error("Error deleting old image:", error)
-          }
-        }
+        await deleteFromR2(post.img)
       }
-      const uploadedResponse = await cloudinary.uploader.upload(img, {
-        folder: "cuez/posts",
-        resource_type: "image",
-        invalidate: true,
-      })
-      updateData.img = uploadedResponse.secure_url
+      updateData.img = await uploadToR2(img, "cuez/posts")
       updateData.editedAt = new Date()
     }
 
     if (video && video !== post.video) {
       if (post.video) {
-        const videoId = post.video.split("/").pop()?.split(".")[0]
-        if (videoId) {
-          try {
-            await cloudinary.uploader.destroy(`cuez/posts/${videoId}`, {
-              resource_type: "video",
-              invalidate: true,
-            })
-          } catch (error) {
-            console.error("Error deleting old video:", error)
-          }
-        }
+        await deleteFromR2(post.video)
       }
-      const uploadedResponse = await cloudinary.uploader.upload(video, {
-        folder: "cuez/posts",
-        resource_type: "video",
-        invalidate: true,
-      })
-      updateData.video = uploadedResponse.secure_url
+      updateData.video = await uploadToR2(video, "cuez/posts")
       updateData.editedAt = new Date()
     }
 
@@ -198,21 +160,11 @@ const deletePost = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (post.img) {
-      const imageId = post.img.split("/").pop()?.split(".")[0]
-      if (imageId) {
-        await cloudinary.uploader.destroy(`cuez/posts/${imageId}`, {
-          resource_type: "image",
-        })
-      }
+      await deleteFromR2(post.img)
     }
 
     if (post.video) {
-      const videoId = post.video.split("/").pop()?.split(".")[0]
-      if (videoId) {
-        await cloudinary.uploader.destroy(`cuez/posts/${videoId}`, {
-          resource_type: "video",
-        })
-      }
+      await deleteFromR2(post.video)
     }
 
     await Notification.deleteMany({ post: post._id })
