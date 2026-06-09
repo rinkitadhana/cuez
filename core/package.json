@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "migrate:r2": "ts-node scripts/migrate-to-r2.ts"
+    "start": "node dist/index.js"
   },
   "author": "Rinkit Adhana",
   "license": "ISC",
@@ -31,7 +30,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1064.0",
     "bcrypt": "^5.1.1",
-    "cloudinary": "^2.6.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -39,5 +37,10 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.10.1",
     "nodemailer": "^6.10.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt"
+    ]
   }
 }

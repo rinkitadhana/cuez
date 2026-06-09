@@ -5,7 +5,7 @@ import { clearJWT, generateJWT } from "../utils/jwt-util"
 import OTP from "../models/OTP-model"
 import bcrypt from "bcrypt"
 import { generateOTP } from "../utils/generateOTP"
-import { sendLoginEmail, sendOTPEmail } from "../services/email-service"
+import { sendOTPEmail } from "../services/email-service"
 import jwt from "jsonwebtoken"
 import { JWT_SECRET_RESET } from "../config/env"
 
@@ -126,8 +126,7 @@ const loginUser = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ message: "Invalid password!" })
       return
     }
-    generateJWT(res, user._id as string)
-    sendLoginEmail(user.email, user.username)
+    generateJWT(res, String(user._id))
     res.status(200).json({ message: "Login successful!" })
   } catch (error) {
     errorHandler(res, error)

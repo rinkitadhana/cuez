@@ -144,10 +144,11 @@ const SignUp = () => {
         <form className=" flex flex-col gap-6" onSubmit={handleSignup}>
           <div className=" flex flex-col gap-4">
             <Image
-              className=" size-50 select-none"
+              className=" h-auto w-[200px] select-none"
               src="/img/icon/cuez-name.png"
-              height={180}
-              width={180}
+              width={500}
+              height={150}
+              priority
               alt="company_logo"
             />
             {/* <h1 className=" text-mainclr text-5xl font-bold">Cuez</h1> */}

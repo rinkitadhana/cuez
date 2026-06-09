@@ -44,7 +44,7 @@ export const getOTPEmailTemplate = (username: string, otp: string): string => {
               <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center">
-                    <img src="https://res.cloudinary.com/dhcocqegu/image/upload/v1745885316/cuez/cuez-name-logo.png" alt="Cuez Logo" width="160px" height="auto" style="display: block; margin: 0 auto;">
+                    <img src="https://pub-26c989eb78e2450ba6e03cd8376b3ae1.r2.dev/cuez/cuez-name-logo.png" alt="Cuez Logo" width="160px" height="auto" style="display: block; margin: 0 auto;">
                   </td>
                 </tr>
                 <tr>
@@ -174,7 +174,7 @@ export const getLoginEmailTemplate = (username: string): string => {
                   <tr>
                     <td align="center">
                       <img
-                        src="https://res.cloudinary.com/dhcocqegu/image/upload/v1745885316/cuez/cuez-name-logo.png"
+                        src="https://pub-26c989eb78e2450ba6e03cd8376b3ae1.r2.dev/cuez/cuez-name-logo.png"
                         alt="Cuez Logo"
                         width="160px"
                         height="auto"

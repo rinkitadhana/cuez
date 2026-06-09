@@ -2,28 +2,31 @@
 
 import { useGetMe } from "@/hooks/useAuth"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useRef } from "react"
 import LoadingScreen from "./LoadingScreen"
+
+const authRoutes = ["/login", "/signup", "/forgot-password"]
 
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const { data: user, isLoading } = useGetMe()
   const router = useRouter()
   const pathname = usePathname()
-  const [isChecking, setIsChecking] = useState(true)
+  const hasRedirected = useRef(false)
 
-  const authRoutes = ["/login", "/signup", "/forgot-password"]
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
 
   useEffect(() => {
-    if (!isLoading) {
-      setIsChecking(false)
-      if (!user && !isAuthRoute) {
-        router.push("/login")
-      }
+    if (!isLoading && !user && !isAuthRoute && !hasRedirected.current) {
+      hasRedirected.current = true
+      router.replace("/login")
     }
-  }, [isLoading, user, router, pathname, isAuthRoute])
+    // Reset the guard if auth state changes (e.g. user logs in).
+    if (user) hasRedirected.current = false
+  }, [isLoading, user, isAuthRoute, router])
 
-  if ((isChecking || isLoading) && !isAuthRoute) {
+  // Still resolving auth, or we know there's no user and are redirecting:
+  // hold on the loader instead of flashing the protected page.
+  if (!isAuthRoute && (isLoading || !user)) {
     return <LoadingScreen />
   }
 

@@ -27,7 +27,7 @@ const parseDataUri = (
 /**
  * Upload a base64 data-URI (the same payload the client already sends) to R2.
  * Returns the public URL. The object key lives under `folder/` to mirror the
- * old Cloudinary folder structure (e.g. "cuez/posts").
+ * folder structure (e.g. "cuez/posts").
  */
 export const uploadToR2 = async (
   dataUri: string,
