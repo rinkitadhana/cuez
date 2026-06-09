@@ -1,7 +1,7 @@
 import { Response } from "express"
 import jwt from "jsonwebtoken"
+import { JWT_SECRET } from "../config/env"
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret"
 const JWT_EXPIRY = process.env.JWT_EXPIRY || "7d"
 
 const generateJWT = (res: Response, userId: string) => {

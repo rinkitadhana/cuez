@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express"
 import jwt from "jsonwebtoken"
 import User from "../models/user-model"
+import { JWT_SECRET } from "../config/env"
 
 declare global {
   namespace Express {
@@ -9,8 +10,6 @@ declare global {
     }
   }
 }
-
-const JWT_SECRET = process.env.JWT_SECRET || "secret"
 
 export const protectRoute = async (
   req: Request,

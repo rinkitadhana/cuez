@@ -7,10 +7,8 @@ import bcrypt from "bcrypt"
 import { generateOTP } from "../utils/generateOTP"
 import { sendLoginEmail, sendOTPEmail } from "../services/email-service"
 import jwt from "jsonwebtoken"
-import dotenv from "dotenv"
-dotenv.config()
+import { JWT_SECRET_RESET } from "../config/env"
 
-const JWT_SECRET_RESET = (process.env.JWT_SECRET_RESET as string) || "secret"
 const JWT_EXPIRY_RESET = "10m"
 
 const sendOTP = async (req: Request, res: Response): Promise<void> => {
@@ -31,10 +29,11 @@ const sendOTP = async (req: Request, res: Response): Promise<void> => {
     //   return
     // }
     const otp = generateOTP()
+    const hashedOtp = await bcrypt.hash(otp, 10)
     await OTP.findOneAndDelete({ email })
     await OTP.create({
       email,
-      otp,
+      otp: hashedOtp,
     })
     const emailSent = await sendOTPEmail(email, email.split("@")[0], otp)
     if (!emailSent) {
@@ -66,7 +65,8 @@ const registerUser = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    if (otpRecord?.otp != otp) {
+    const isOtpValid = await bcrypt.compare(otp, otpRecord.otp)
+    if (!isOtpValid) {
       res.status(400).json({ message: "Invalid OTP!" })
       return
     }
@@ -155,7 +155,8 @@ const verifyOTP = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ message: "OTP expired or not found!" })
       return
     }
-    if (otpRecord?.otp != otp) {
+    const isOtpValid = await bcrypt.compare(otp, otpRecord.otp)
+    if (!isOtpValid) {
       res.status(400).json({ message: "Invalid OTP!" })
       return
     }
