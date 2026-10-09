@@ -1,6 +1,6 @@
 import express from "express"
 import dotenv from "dotenv"
-import connectDB from "./config/database"
+import connectDB, { ensureDB } from "./config/database"
 import authRoute from "./routes/auth-route"
 import userRoute from "./routes/user-route"
 import postRoute from "./routes/post-route"
@@ -38,6 +38,7 @@ app.get("/", (req, res) => {
 })
 
 //routes
+app.use("/api", ensureDB)
 app.use("/api/auth", authRoute)
 app.use("/api/user", userRoute)
 app.use("/api/post", postRoute)
