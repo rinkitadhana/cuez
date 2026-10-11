@@ -1,16 +1,18 @@
 "use client"
 import { useState } from "react"
 import Link from "next/link"
-import { MailPlus } from "lucide-react"
+import { Loader2, MailPlus, Search, X } from "lucide-react"
 import SafeImage from "@/components/media/SafeImage"
 import CuezBadge from "@/components/pageComponents/CuezBadge"
 import LoadMore from "@/components/LoadMore"
 import MenuButton from "@/layout/MenuButton"
 import NewMessageModal from "./NewMessageModal"
-import { useConversations } from "@/hooks/useChat"
+import { useChatSearch, useConversations } from "@/hooks/useChat"
+import { useDebounce } from "@/hooks/useDebounce"
+import Highlight from "./Highlight"
 import { useGetMe } from "@/hooks/useAuth"
 import { formatListTime } from "@/lib/chatTime"
-import { Conversation } from "@/types/Chat"
+import { ChatMessage, Conversation } from "@/types/Chat"
 import useChatStore from "@/store/ChatStore"
 
 const preview = (conversation: Conversation, meId?: string) => {
@@ -88,9 +90,122 @@ const ConversationRow = ({
   )
 }
 
+const MessageResult = ({
+  message,
+  otherUser,
+  query,
+  meId,
+}: {
+  message: ChatMessage
+  otherUser: Conversation["otherUser"]
+  query: string
+  meId?: string
+}) => (
+  <Link
+    href={`/chat/${message.conversation}?m=${message._id}`}
+    className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-900 transition-colors"
+  >
+    <SafeImage
+      kind="avatar"
+      src={otherUser?.profileImg}
+      alt={otherUser?.username || "Deleted user"}
+      width={40}
+      height={40}
+      className="size-10 rounded-xl object-cover bg-white shrink-0"
+    />
+    <div className="flex flex-col min-w-0 flex-1">
+      <div className="flex items-center gap-1 min-w-0">
+        <span className="font-semibold text-sm truncate">
+          {otherUser?.fullName || otherUser?.username || "Deleted user"}
+        </span>
+        <span className="text-xs text-zinc-500 truncate">
+          @{otherUser?.username || "deleted"}
+        </span>
+        <span className="text-xs text-zinc-500 shrink-0 ml-auto pl-2">
+          {formatListTime(message.createdAt)}
+        </span>
+      </div>
+      <p className="text-sm text-zinc-400 line-clamp-2 break-words">
+        {message.sender === meId && <span className="text-zinc-500">You: </span>}
+        <Highlight text={message.text || ""} query={query} />
+      </p>
+    </div>
+  </Link>
+)
+
+const SearchResults = ({
+  query,
+  activeId,
+  meId,
+}: {
+  query: string
+  activeId: string | null
+  meId?: string
+}) => {
+  const search = useChatSearch(query)
+  if (search.isLoading) {
+    return (
+      <div className="flex justify-center py-10">
+        <Loader2 className="size-5 animate-spin text-zinc-400" />
+      </div>
+    )
+  }
+  if (search.people.length === 0 && search.messages.length === 0) {
+    return (
+      <div className="flex flex-col gap-1 px-8 py-12">
+        <h2 className="text-xl font-bold break-words">
+          No results for &ldquo;{query}&rdquo;
+        </h2>
+        <p className="text-sm text-zinc-400">
+          Try searching for a name, username or a word from a message.
+        </p>
+      </div>
+    )
+  }
+  return (
+    <>
+      {search.people.length > 0 && (
+        <>
+          <h3 className="px-4 pt-4 pb-1 text-sm font-bold">People</h3>
+          {search.people.map((conversation) => (
+            <ConversationRow
+              key={conversation._id}
+              conversation={conversation}
+              active={conversation._id === activeId}
+              meId={meId}
+            />
+          ))}
+        </>
+      )}
+      {search.messages.length > 0 && (
+        <>
+          <h3 className="px-4 pt-4 pb-1 text-sm font-bold">Messages</h3>
+          {search.messages.map(({ message, otherUser }) => (
+            <MessageResult
+              key={message._id}
+              message={message}
+              otherUser={otherUser}
+              query={query}
+              meId={meId}
+            />
+          ))}
+          <LoadMore
+            hasNextPage={search.hasNextPage}
+            isFetchingNextPage={search.isFetchingNextPage}
+            fetchNextPage={search.fetchNextPage}
+          />
+        </>
+      )}
+    </>
+  )
+}
+
 const ConversationList = ({ activeId }: { activeId: string | null }) => {
   const [tab, setTab] = useState<"inbox" | "requests">("inbox")
   const [isNewOpen, setIsNewOpen] = useState(false)
+  const search = useChatStore((s) => s.search)
+  const setSearch = useChatStore((s) => s.setSearch)
+  const query = useDebounce(search.trim(), 250)
   const { data: me } = useGetMe()
   const inbox = useConversations("inbox")
   const requests = useConversations("requests")
@@ -114,7 +229,27 @@ const ConversationList = ({ activeId }: { activeId: string | null }) => {
             <MailPlus className="size-5" />
           </button>
         </div>
-        <div className="flex">
+        <div className="relative px-4 pb-3">
+          <Search className="absolute left-7 top-1/2 -translate-y-[calc(50%+6px)] size-4 text-zinc-400 pointer-events-none" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setSearch("")}
+            placeholder="Search Direct Messages"
+            aria-label="Search Direct Messages"
+            className="w-full pl-9 pr-9 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-sm placeholder:text-zinc-500 focus:outline-none focus:border-mainclr transition-colors"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+              className="absolute right-6 top-1/2 -translate-y-[calc(50%+6px)] p-1 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+        <div className={`flex ${query ? "hidden" : ""}`}>
           {(["inbox", "requests"] as const).map((id) => (
             <button
               key={id}
@@ -143,7 +278,9 @@ const ConversationList = ({ activeId }: { activeId: string | null }) => {
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {list.isLoading ? (
+        {query ? (
+          <SearchResults query={query} activeId={activeId} meId={me?.user._id} />
+        ) : list.isLoading ? (
           <div className="flex flex-col">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">

@@ -1,5 +1,10 @@
 import config from "../config/config"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import axios, { AxiosError } from "axios"
 import useMessageStore from "@/store/messageStore"
 import { ChatMessage, Conversation } from "@/types/Chat"
@@ -29,6 +34,34 @@ export const useConversations = (filter: "inbox" | "requests") =>
     itemsKey: "conversations",
     params: { filter },
   })
+
+export interface ChatSearchPage {
+  people: Conversation[]
+  messages: { message: ChatMessage; otherUser: Conversation["otherUser"] }[]
+  nextCursor?: string | null
+}
+
+// People (first page only) and matching messages across my conversations.
+export const useChatSearch = (q: string) => {
+  const query = useInfiniteQuery<ChatSearchPage, AxiosError>({
+    queryKey: ["chat", "search", q],
+    queryFn: async ({ pageParam }) => {
+      const { data } = await axios.get<ChatSearchPage>(api("/search"), {
+        params: { q, limit: 20, cursor: pageParam ?? undefined },
+        ...withCredentials,
+      })
+      return data
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.nextCursor || undefined,
+    enabled: !!q,
+  })
+  return {
+    ...query,
+    people: query.data?.pages[0]?.people ?? [],
+    messages: query.data?.pages.flatMap((p) => p.messages) ?? [],
+  }
+}
 
 export const useChatUnreadCount = () => {
   const isLoggedIn = useIsLoggedIn()

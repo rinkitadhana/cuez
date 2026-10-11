@@ -22,8 +22,11 @@ const MessageBubble = ({
   onReply,
   onReact,
   onUnsend,
+  highlighted = false,
 }: {
   message: ChatMessage
+  // Briefly ringed after jumping here from search.
+  highlighted?: boolean
   isMine: boolean
   isFirstInGroup: boolean
   isLastInGroup: boolean
@@ -137,8 +140,11 @@ const MessageBubble = ({
   return (
     <div
       ref={ref}
-      className={`group/msg flex flex-col ${isMine ? "items-end" : "items-start"} ${
-        isFirstInGroup ? "mt-3" : "mt-0.5"
+      id={`msg-${message._id}`}
+      className={`group/msg flex flex-col rounded-2xl transition-colors duration-700 ${
+        isMine ? "items-end" : "items-start"
+      } ${isFirstInGroup ? "mt-3" : "mt-0.5"} ${
+        highlighted ? "bg-mainclr/15 ring-1 ring-mainclr/40" : ""
       }`}
     >
       {message.replyTo && (

@@ -10,11 +10,16 @@ interface ChatStore {
   // Entries clear themselves after a few seconds without a new ping.
   typingAt: Record<string, number>
   setTyping: (conversationId: string, at: number | null) => void
+  // DM search text; kept here so it survives opening a result.
+  search: string
+  setSearch: (search: string) => void
 }
 
 const useChatStore = create<ChatStore>((set, get) => ({
   activeConversationId: null,
   setActiveConversationId: (id) => set({ activeConversationId: id }),
+  search: "",
+  setSearch: (search) => set({ search }),
   typingAt: {},
   setTyping: (conversationId, at) => {
     set((state) => {

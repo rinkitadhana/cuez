@@ -1,7 +1,7 @@
 "use client"
 import { Fragment, useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Loader2, MoreHorizontal, Trash2 } from "lucide-react"
 import SafeImage from "@/components/media/SafeImage"
 import CuezBadge from "@/components/pageComponents/CuezBadge"
@@ -74,6 +74,10 @@ const ChatThread = ({ conversationId }: { conversationId: string }) => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const searchParams = useSearchParams()
+  const targetId = searchParams.get("m")
+  const [highlightId, setHighlightId] = useState<string | null>(null)
+  const jumpedTo = useRef<string | null>(null)
 
   // Mark this conversation as on-screen so live messages count as read.
   useEffect(() => {
@@ -92,6 +96,30 @@ const ChatThread = ({ conversationId }: { conversationId: string }) => {
     document.addEventListener("visibilitychange", onVisible)
     return () => document.removeEventListener("visibilitychange", onVisible)
   }, [unread, markRead])
+
+  // Opened from a search result (?m=<id>): load older pages until the
+  // message is in view, then scroll to it and flash it.
+  const { items, hasNextPage, isFetchingNextPage, fetchNextPage } = messages
+  useEffect(() => {
+    if (!targetId || jumpedTo.current === targetId) return
+    if (items.some((m) => m._id === targetId)) {
+      jumpedTo.current = targetId
+      requestAnimationFrame(() => {
+        document
+          .getElementById(`msg-${targetId}`)
+          ?.scrollIntoView({ block: "center" })
+      })
+      setHighlightId(targetId)
+      return
+    }
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage()
+  }, [targetId, items, hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  useEffect(() => {
+    if (!highlightId) return
+    const timer = setTimeout(() => setHighlightId(null), 2500)
+    return () => clearTimeout(timer)
+  }, [highlightId])
 
   // Jump to the newest message whenever I send one.
   const newestId = messages.items[0]?._id
@@ -259,6 +287,7 @@ const ChatThread = ({ conversationId }: { conversationId: string }) => {
                   onReply={() => setReplyTo(message)}
                   onReact={(emoji) => react({ messageId: message._id, emoji })}
                   onUnsend={() => unsend(message._id)}
+                  highlighted={highlightId === message._id}
                 />
                 {showDay && (
                   <div className="flex items-center gap-3 my-4 text-xs text-zinc-500">
