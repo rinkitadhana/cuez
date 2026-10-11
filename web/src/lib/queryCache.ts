@@ -18,6 +18,7 @@ const POST_QUERY_KEYS = [
   "replies",
   "post",
   "parent-thread",
+  "search-posts",
 ]
 export const postQueries = {
   predicate: (query: Query) =>

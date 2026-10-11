@@ -14,6 +14,7 @@ const RightSidebar = () => {
   if (!isLoggedIn) {
     return (
       <section className="flex flex-col gap-4 my-4 w-full">
+        {!pathname.includes("/search") && <SearchBox />}
         <GithubStar />
       </section>
     )

@@ -14,18 +14,20 @@ export const useInfiniteList = <T, K extends string>({
   queryKey,
   path,
   itemsKey,
+  params,
   enabled = true,
 }: {
   queryKey: unknown[]
   path: string
   itemsKey: K
+  params?: Record<string, string>
   enabled?: boolean
 }) => {
   const query = useInfiniteQuery<Page<K, T>, AxiosError>({
     queryKey,
     queryFn: async ({ pageParam }) => {
       const { data } = await axios.get<Page<K, T>>(config.backendUrl + path, {
-        params: { limit: PAGE_SIZE, cursor: pageParam ?? undefined },
+        params: { ...params, limit: PAGE_SIZE, cursor: pageParam ?? undefined },
         withCredentials: true,
       })
       return data
