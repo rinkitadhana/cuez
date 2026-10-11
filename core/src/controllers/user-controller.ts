@@ -4,6 +4,7 @@ import { Request, Response } from "express"
 import { uploadToR2, deleteFromR2 } from "../utils/storage"
 import Notification from "../models/notification-model"
 import bcrypt from "bcrypt"
+import { normalizeUsername, validateUsername } from "../utils/username"
 import { getPagination, paginate } from "../utils/pagination"
 
 const getUserProfile = async (req: Request, res: Response): Promise<void> => {
@@ -124,15 +125,12 @@ const updateUserProfile = async (
   res: Response
 ): Promise<void> => {
   try {
-    const {
-      fullName,
-      username,
-      bio,
-      link,
-      location,
-      currentPassword,
-      newPassword,
-    } = req.body
+    const { fullName, bio, link, location, currentPassword, newPassword } =
+      req.body
+    const username =
+      req.body.username === undefined
+        ? undefined
+        : normalizeUsername(req.body.username)
     const { profileImg, coverImg } = req.body
 
     const userId = req.user._id
@@ -144,14 +142,16 @@ const updateUserProfile = async (
       return
     }
 
-    const isUsernameTaken = await User.findOne({
-      username,
-      _id: { $ne: userId },
-    })
-
-    if (isUsernameTaken) {
-      res.status(400).json({ message: "Username is already taken!" })
-      return
+    if (username !== undefined && username !== user.username) {
+      const usernameError = validateUsername(username)
+      if (usernameError) {
+        res.status(400).json({ message: usernameError })
+        return
+      }
+      if (await User.exists({ username, _id: { $ne: userId } })) {
+        res.status(400).json({ message: "Username is already taken!" })
+        return
+      }
     }
 
     if (currentPassword && newPassword) {

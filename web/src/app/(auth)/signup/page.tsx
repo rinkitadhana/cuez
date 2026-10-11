@@ -41,9 +41,14 @@ const SignUp = () => {
     otp: "",
   })
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      // Usernames become profile URLs: lowercase letters, numbers, underscores.
+      [name]:
+        name === "username"
+          ? value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20)
+          : value,
     })
   }
 

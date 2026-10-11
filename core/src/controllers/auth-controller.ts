@@ -1,4 +1,5 @@
 import { Request, Response } from "express"
+import { normalizeUsername, validateUsername } from "../utils/username"
 import User from "../models/user-model"
 import { errorHandler } from "../utils/errorHandler"
 import { clearJWT, generateJWT } from "../utils/jwt-util"
@@ -53,10 +54,16 @@ const defaultUsersToFollow = [
 
 const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, email, password, otp } = req.body
+    const { email, password, otp } = req.body
+    const username = normalizeUsername(req.body.username)
 
     if (!username || !email || !password || !otp) {
       res.status(400).json({ message: "Please enter all fields!" })
+      return
+    }
+    const usernameError = validateUsername(username)
+    if (usernameError) {
+      res.status(400).json({ message: usernameError })
       return
     }
     const otpRecord = await OTP.findOne({ email })
