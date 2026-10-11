@@ -63,6 +63,10 @@ const LeftSidebar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // Nested pages (e.g. /settings/profile, /chat/<id>) keep their section lit.
+  const isActive = (href: string) =>
+    pathname === href || (href !== "/home" && pathname.startsWith(href + "/"))
+
   const links = [
     {
       href: "/home",
@@ -287,9 +291,9 @@ const LeftSidebar = () => {
                 }
               }}
               className="font-medium flex items-center gap-2 py-2.5 group/nav-link"
-              style={{ fontWeight: pathname === link.href ? "600" : "normal" }}
+              style={{ fontWeight: isActive(link.href) ? "600" : "normal" }}
             >
-              {pathname === link.href ? link.icon.filled : link.icon.outline}
+              {isActive(link.href) ? link.icon.filled : link.icon.outline}
               <span className="group-hover/nav-link:ml-1.5 transition-all duration-200">
                 {link.label}
               </span>
