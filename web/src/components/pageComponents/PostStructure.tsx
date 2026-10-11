@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation"
 import EditPost from "./EditPost"
 import { useFollowUnfollowUser, useIsFollowing } from "@/hooks/useUser"
 import CuezBadge from "./CuezBadge"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 
 interface PostStructureProps {
   post: Post
@@ -38,16 +39,17 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   const warningRef = useRef<HTMLDivElement>(null)
   const postRef = useRef<HTMLElement>(null)
   const { data: authUser } = useGetMe()
+  const { requireAuth } = useRequireAuth()
   const { mutate: deletePost, isPending } = useDeletePost()
   const { mutate: likeUnlikePost, isPending: isLikeUnlikePending } =
     useLikeUnlikePost()
   const { mutate: bookmarkPost, isPending: isBookmarkPending } =
     useBookmarkPost()
-  const { data: isBookmarked, isPending: isBookmarkedPending } =
+  const { data: isBookmarked, isLoading: isBookmarkedPending } =
     useIsBookmarked(post._id)
-  const { data: isLiked, isPending: isLikedPending } = useIsLiked(post._id)
+  const { data: isLiked, isLoading: isLikedPending } = useIsLiked(post._id)
   const { data: replyCount } = useGetReplyCount(post._id)
-  const { data: isFollowing, isPending: isFollowingPending } = useIsFollowing(
+  const { data: isFollowing, isLoading: isFollowingPending } = useIsFollowing(
     post?.user?._id || ""
   )
   const {
@@ -94,7 +96,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   }
 
   const handleLikeUnlikePost = () => {
-    likeUnlikePost(post._id)
+    requireAuth(() => likeUnlikePost(post._id))
   }
 
   const userProfile = () => {
@@ -103,7 +105,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   }
 
   const handleBookmarkPost = () => {
-    bookmarkPost(post._id)
+    requireAuth(() => bookmarkPost(post._id))
   }
 
   const handleShare = async () => {
@@ -193,7 +195,11 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                     ) : isFollowing?.isFollowing ? (
                       <div className="text-xs text-zinc-400">Following</div>
                     ) : (
-                      <div onClick={() => followUnfollowUser(post.user._id)}>
+                      <div
+                        onClick={() =>
+                          requireAuth(() => followUnfollowUser(post.user._id))
+                        }
+                      >
                         {isFollowUnfollowPending && (
                           <div className="text-sm text-zinc-400">...</div>
                         )}
@@ -294,7 +300,9 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    router.push(`/post/${post._id}?focus=comment-input`)
+                    requireAuth(() =>
+                      router.push(`/post/${post._id}?focus=comment-input`)
+                    )
                   }}
                   className="flex items-center gap-1 p-1.5 hover:bg-blue-500/30 group/comment rounded-lg transition-all duration-200"
                 >
@@ -303,7 +311,10 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                 <span className="text-sm">{replyCount?.count || 0}</span>
               </div>
               <div className="flex items-center gap-1">
-                <button className="p-1.5 hover:bg-green-500/30 rounded-lg transition-all group/repost  duration-200">
+                <button
+                  onClick={() => requireAuth()}
+                  className="p-1.5 hover:bg-green-500/30 rounded-lg transition-all group/repost  duration-200"
+                >
                   <HiArrowPathRoundedSquare className="group-hover/repost:rotate-180 transition-all duration-300" />
                 </button>
                 <span className="text-sm">0</span>

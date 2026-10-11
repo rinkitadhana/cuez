@@ -3,10 +3,12 @@
 import MenuButton from "@/layout/MenuButton"
 import useFeedTypeStore from "@/store/FeedTypeStore"
 import { useEffect, useState } from "react"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 
 const HomeHeader = () => {
   const [activeTab, setActiveTab] = useState("All")
   const { setFeedType } = useFeedTypeStore()
+  const { requireAuth } = useRequireAuth()
   useEffect(() => {
     setFeedType(activeTab)
   }, [activeTab, setFeedType])
@@ -25,7 +27,7 @@ const HomeHeader = () => {
           Newest
         </div>
         <div
-          onClick={() => setActiveTab("Following")}
+          onClick={() => requireAuth(() => setActiveTab("Following"))}
           className={`flex flex-1 justify-center items-center text-xs rounded-r-xl border-l border-zinc-700 font-semibold px-3 py-2 cursor-pointer transition-colors duration-200 ${
             activeTab === "Following" ? "bg-zinc-800" : "hover:bg-zinc-800"
           }`}

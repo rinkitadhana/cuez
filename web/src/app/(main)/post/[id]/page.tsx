@@ -35,6 +35,7 @@ import { useFollowUnfollowUser } from "@/hooks/useUser"
 import CuezBadge from "@/components/pageComponents/CuezBadge"
 import PageHead from "@/components/pageComponents/PageHead"
 import ParentThread from "@/components/pageComponents/ParentThread"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 
 const PostPage = () => {
   const { id } = useParams()
@@ -48,19 +49,20 @@ const PostPage = () => {
   const warningRef = useRef<HTMLDivElement>(null)
   const [commentActive, setCommentActive] = useState(false)
   const { data: authUser } = useGetMe()
+  const { requireAuth } = useRequireAuth()
   const { mutate: deletePost, isPending: isDeletePending } = useDeletePost()
   const { mutate: likeUnlikePost, isPending: isLikeUnlikePending } =
     useLikeUnlikePost()
-  const { data: isFollowing, isPending: isFollowingPending } = useIsFollowing(
+  const { data: isFollowing, isLoading: isFollowingPending } = useIsFollowing(
     post?.post?.user?._id || ""
   )
   const { mutate: followUnfollowUser, isPending: isFollowUnfollowPending } =
     useFollowUnfollowUser()
   const { mutate: bookmarkPost, isPending: isBookmarkPending } =
     useBookmarkPost()
-  const { data: isBookmarked, isPending: isBookmarkedPending } =
+  const { data: isBookmarked, isLoading: isBookmarkedPending } =
     useIsBookmarked(id as string)
-  const { data: isLiked, isPending: isLikedPending } = useIsLiked(id as string)
+  const { data: isLiked, isLoading: isLikedPending } = useIsLiked(id as string)
   const { data: replyCount } = useGetReplyCount(id as string)
   const isUpdated =
     post?.post.editedAt &&
@@ -122,11 +124,13 @@ const PostPage = () => {
 
   const handleBookmarkPost = () => {
     if (!post?.post._id) return
-    bookmarkPost(post.post._id)
+    const postId = post.post._id
+    requireAuth(() => bookmarkPost(postId))
   }
   const handleLikeUnlikePost = () => {
     if (!post?.post._id) return
-    likeUnlikePost(post.post._id)
+    const postId = post.post._id
+    requireAuth(() => likeUnlikePost(postId))
   }
 
   const handleShare = async () => {
@@ -246,7 +250,9 @@ const PostPage = () => {
                           ) : (
                             <div
                               onClick={() =>
-                                followUnfollowUser(post?.post?.user?._id || "")
+                                requireAuth(() =>
+                                  followUnfollowUser(post?.post?.user?._id || "")
+                                )
                               }
                             >
                               {isFollowUnfollowPending ? (
@@ -340,7 +346,7 @@ const PostPage = () => {
                     <div className="flex gap-3 items-center">
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => setCommentActive(true)}
+                          onClick={() => requireAuth(() => setCommentActive(true))}
                           className="flex items-center gap-1 p-1.5 hover:bg-blue-500/30 group/comment rounded-lg transition-all duration-200"
                         >
                           <BiCommentDetail className="group-hover/comment:scale-[85%] transition-all duration-300" />
@@ -350,7 +356,10 @@ const PostPage = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button className="p-1.5 hover:bg-green-500/30 rounded-lg transition-all group/repost  duration-200">
+                        <button
+                          onClick={() => requireAuth()}
+                          className="p-1.5 hover:bg-green-500/30 rounded-lg transition-all group/repost  duration-200"
+                        >
                           <HiArrowPathRoundedSquare className="group-hover/repost:rotate-180 transition-all duration-300" />
                         </button>
                         <span className="text-sm">0</span>

@@ -6,6 +6,7 @@ import { MdOutlineVideoCameraBack } from "react-icons/md"
 import EmojiPicker from "emoji-picker-react"
 import { Theme, EmojiStyle } from "emoji-picker-react"
 import { useGetMe } from "@/hooks/useAuth"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { useCreatePost } from "@/hooks/usePost"
 import { FiFeather } from "react-icons/fi"
 
@@ -32,6 +33,7 @@ const CreatePost = () => {
   const modalRef = useRef<HTMLDivElement>(null)
   const warningRef = useRef<HTMLDivElement>(null)
   const { data: authUser } = useGetMe()
+  const { requireAuth } = useRequireAuth()
   const { mutate: post } = useCreatePost()
 
   const hasMedia = !!formData.img || !!formData.video
@@ -197,7 +199,7 @@ const CreatePost = () => {
   return (
     <>
       <button
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => requireAuth(() => setIsModalOpen(true))}
         className="px-3 flex items-center justify-center gap-2 py-2 rounded-xl bg-mainclr text-white font-semibold hover:bg-mainclr/80 transition-all duration-200"
       >
         <FiFeather size={19} /> Create a post

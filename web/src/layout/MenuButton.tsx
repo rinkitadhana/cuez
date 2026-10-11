@@ -2,10 +2,23 @@ import { useGetMe } from "@/hooks/useAuth"
 import useMenuStore from "@/store/MenuStrore"
 import Image from "next/image"
 import React from "react"
+import Link from "next/link"
 
 const MenuButton = () => {
   const { data } = useGetMe()
   const { setOpen } = useMenuStore()
+
+  if (!data?.user) {
+    return (
+      <Link
+        href="/login"
+        className="md:hidden block px-3 py-1.5 rounded-xl bg-mainclr text-white text-xs font-semibold"
+      >
+        Log in
+      </Link>
+    )
+  }
+
   return (
     <div onClick={() => setOpen(true)} className="md:hidden block">
       <Image

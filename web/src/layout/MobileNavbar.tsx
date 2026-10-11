@@ -2,6 +2,7 @@
 import { useGetMe } from "@/hooks/useAuth"
 import { useGetUnreadNotificationsCount } from "@/hooks/useNotification"
 import { Loader2 } from "lucide-react"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { usePathname } from "next/navigation"
 import NextLink from "next/link"
 import { BsBell, BsBellFill } from "react-icons/bs"
@@ -20,7 +21,8 @@ import {
  * Displays navigation links with active state indicators
  */
 const MobileNavbar = () => {
-  const { data: me, isLoading: isLoadingUser } = useGetMe()
+  const { isLoading: isLoadingUser } = useGetMe()
+  const { isLoggedIn, requireAuth } = useRequireAuth()
   const {
     data: unreadNotificationsCount,
     isLoading: isUnreadNotificationsCountLoading,
@@ -33,6 +35,7 @@ const MobileNavbar = () => {
     {
       href: "/home",
       label: "Home",
+      public: true,
       icon: {
         filled: <RiHome2Fill className="text-2xl" />,
         outline: <RiHome2Line className="text-2xl" />,
@@ -41,6 +44,7 @@ const MobileNavbar = () => {
     {
       href: "/search",
       label: "Search",
+      public: true,
       icon: {
         filled: <RiSearchFill className="text-2xl" />,
         outline: <RiSearchLine className="text-2xl" />,
@@ -157,14 +161,17 @@ const MobileNavbar = () => {
         <div className="flex justify-between items-center">
           {links.map((link) => {
             const isActive = isLinkActive(link.href)
-            const username = me?.user?.username
-            const href =
-              link.href === `/${username}` && !username ? "/login" : link.href
 
             return (
               <NextLink
                 key={link.href}
-                href={href}
+                href={link.href}
+                onClick={(e) => {
+                  if (!isLoggedIn && !link.public) {
+                    e.preventDefault()
+                    requireAuth()
+                  }
+                }}
                 className={`flex flex-col items-center justify-center py-2.5 px-1 transition-colors ${
                   isActive
                     ? "text-mainclr"

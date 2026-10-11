@@ -7,6 +7,7 @@ import Image from "next/image"
 import React from "react"
 import { User } from "@/types/User"
 import { useGetMe } from "@/hooks/useAuth"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import CuezBadge from "./CuezBadge"
@@ -19,9 +20,10 @@ const UserInfo = ({ user }: { user: User }) => {
     useFollowUnfollowUser()
   const { data: followsYou } = useGetFollowsYou(user._id || "")
   const { data: authUser } = useGetMe()
+  const { requireAuth } = useRequireAuth()
   const isLoading = isFollowUnfollowPending || isFollowingLoading
   const handleFollowUnfollowUser = () => {
-    followUnfollowUser(user._id)
+    requireAuth(() => followUnfollowUser(user._id))
   }
 
   return (

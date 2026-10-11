@@ -4,6 +4,7 @@ import axios, { AxiosError } from "axios"
 import useFeedTypeStore from "@/store/FeedTypeStore"
 import useMessageStore from "@/store/messageStore"
 import { Post } from "../types/Post"
+import { useIsLoggedIn } from "./useAuth"
 
 interface GetPostsResponse {
   message: string
@@ -267,9 +268,11 @@ const isLiked = async (postId: string): Promise<IsLikedResponse> => {
 }
 
 export const useIsLiked = (postId: string) => {
+  const isLoggedIn = useIsLoggedIn()
   return useQuery<IsLikedResponse, AxiosError>({
     queryKey: ["is-liked", postId],
     queryFn: () => isLiked(postId),
+    enabled: isLoggedIn && !!postId,
   })
 }
 
@@ -450,9 +453,11 @@ const isBookmarked = async (postId: string): Promise<IsBookmarkedResponse> => {
 }
 
 export const useIsBookmarked = (postId: string) => {
+  const isLoggedIn = useIsLoggedIn()
   return useQuery<IsBookmarkedResponse, AxiosError>({
     queryKey: ["is-bookmarked", postId],
     queryFn: () => isBookmarked(postId),
+    enabled: isLoggedIn && !!postId,
   })
 }
 

@@ -3,6 +3,7 @@ import config from "../config/config"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import axios, { AxiosError } from "axios"
 import { User } from "@/types/User"
+import { useIsLoggedIn } from "./useAuth"
 
 interface SuggestedUsersResponse {
   message: string
@@ -20,9 +21,11 @@ const getSuggestedUsers = async (): Promise<SuggestedUsersResponse> => {
 }
 
 export const useGetSuggestedUsers = () => {
+  const isLoggedIn = useIsLoggedIn()
   return useQuery<SuggestedUsersResponse, AxiosError>({
     queryKey: ["suggested-users"],
     queryFn: getSuggestedUsers,
+    enabled: isLoggedIn,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   })
@@ -52,6 +55,7 @@ export const useFollowUnfollowUser = () => {
     mutationFn: followUnfollowUser,
     onSuccess: (data: FollowUnfollowUserResponse) => {
       setMessage(data.message, "success")
+      queryClient.invalidateQueries({ queryKey: ["me"] })
       queryClient.invalidateQueries({ queryKey: ["is-following"] })
       queryClient.invalidateQueries({ queryKey: ["user-profile"] })
       queryClient.invalidateQueries({ queryKey: ["posts"] })
@@ -82,10 +86,11 @@ const isFollowing = async (userId: string): Promise<IsFollowingResponse> => {
 }
 
 export const useIsFollowing = (userId: string) => {
+  const isLoggedIn = useIsLoggedIn()
   return useQuery<IsFollowingResponse, AxiosError>({
     queryKey: ["is-following", userId],
     queryFn: () => isFollowing(userId),
-    enabled: !!userId,
+    enabled: isLoggedIn && !!userId,
   })
 }
 
@@ -155,6 +160,7 @@ export const useUpdateUserProfile = () => {
     mutationFn: updateUserProfile,
     onSuccess: (data: UpdateUserProfileResponse) => {
       setMessage(data.message, "success")
+      queryClient.invalidateQueries({ queryKey: ["me"] })
       queryClient.invalidateQueries({ queryKey: ["user-profile"] })
     },
     onError: (error: AxiosError) => {
@@ -228,9 +234,10 @@ const getFollowsYou = async (
 }
 
 export const useGetFollowsYou = (userId: string) => {
+  const isLoggedIn = useIsLoggedIn()
   return useQuery<GetFollowsYouResponse, AxiosError>({
     queryKey: ["follows-you", userId],
     queryFn: () => getFollowsYou(userId),
-    enabled: !!userId,
+    enabled: isLoggedIn && !!userId,
   })
 }

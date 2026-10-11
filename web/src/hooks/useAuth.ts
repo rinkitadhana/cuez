@@ -1,6 +1,6 @@
 import useMessageStore from "@/store/messageStore"
 import config from "../config/config"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import axios, { AxiosError } from "axios"
 import { useRouter } from "next/navigation"
 import { User } from "@/types/User"
@@ -129,12 +129,15 @@ const login = async (userData: LoginRequest): Promise<LoginResponse> => {
 
 export const useLogin = () => {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { setMessage } = useMessageStore()
   return useMutation<LoginResponse, AxiosError, LoginRequest>({
     mutationFn: login,
     onSuccess: (data: LoginResponse) => {
       setMessage(data.message, "success")
-      router.push("/")
+      // Drop guest-state cache so the app picks up the logged-in user.
+      queryClient.resetQueries()
+      router.replace("/home")
     },
     onError: (error: AxiosError) => {
       const message =
@@ -197,13 +200,13 @@ const logout = async (): Promise<LogoutResponse> => {
 }
 
 export const useLogout = () => {
-  const router = useRouter()
   const { setMessage } = useMessageStore()
   return useMutation<LogoutResponse, AxiosError, void>({
     mutationFn: logout,
     onSuccess: (data: LogoutResponse) => {
       setMessage(data.message, "success")
-      router.push("/login")
+      // Full reload so no logged-in state (cache, open menus, polling) survives.
+      window.location.assign("/home")
     },
     onError: (error: AxiosError) => {
       const message =
@@ -218,7 +221,9 @@ interface GetMeResponse {
   user: User
 }
 
-const getMe = async (): Promise<GetMeResponse> => {
+// Resolves to null for guests instead of erroring, so the query settles with
+// data and doesn't flip back to "pending" on every remount.
+const getMe = async (): Promise<GetMeResponse | null> => {
   try {
     const response = await axios.get<GetMeResponse>(
       config.backendUrl + "/auth/me",
@@ -226,17 +231,27 @@ const getMe = async (): Promise<GetMeResponse> => {
         withCredentials: true,
       }
     )
-    return response.data
+    return response.data.user ? response.data : null
   } catch (error) {
-    console.error("Error fetching user data:", error)
+    // Older backends answer guests with a 401.
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      return null
+    }
     throw error
   }
 }
 
 export const useGetMe = () => {
-  return useQuery<GetMeResponse, AxiosError>({
+  return useQuery<GetMeResponse | null, AxiosError>({
     queryKey: ["me"],
     queryFn: getMe,
     retry: false,
+    // Only changes on login/logout/profile edits, which refresh it explicitly.
+    staleTime: Infinity,
   })
+}
+
+export const useIsLoggedIn = () => {
+  const { data } = useGetMe()
+  return !!data?.user
 }

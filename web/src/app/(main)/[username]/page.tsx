@@ -19,6 +19,7 @@ import NoUser from "@/components/notAvailable/NoUser"
 import GetUsersList from "./profileComponent/GetUsersList"
 import FollowsYou from "@/components/pageComponents/FollowsYou"
 import PageHead from "@/components/pageComponents/PageHead"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 const UserProfile = () => {
   const { username } = useParams()
   const [response, setResponse] = useState<string>("user-posts")
@@ -26,6 +27,7 @@ const UserProfile = () => {
   const [isCoverImageModalOpen, setIsCoverImageModalOpen] = useState(false)
   const { data, isLoading, isError } = useGetUserProfile(username as string)
   const { data: authUser } = useGetMe()
+  const { requireAuth } = useRequireAuth()
   const { mutate: followUnfollowUser, isPending: isFollowUnfollowPending } =
     useFollowUnfollowUser()
   const { data: followsYou } = useGetFollowsYou(data?.user._id || "")
@@ -41,7 +43,7 @@ const UserProfile = () => {
     return date.toLocaleString("en-US", { month: "long", year: "numeric" })
   }
   const handleFollowUnfollow = () => {
-    followUnfollowUser(user?._id || "")
+    requireAuth(() => followUnfollowUser(user?._id || ""))
   }
   const formatLink = (link: string) => {
     if (link.startsWith("https://")) {

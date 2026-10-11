@@ -32,6 +32,7 @@ import {
 import { SlOptions } from "react-icons/sl"
 import { useGetUnreadNotificationsCount } from "@/hooks/useNotification"
 import { Loader2 } from "lucide-react"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 
 const LeftSidebar = () => {
   const pathname = usePathname()
@@ -39,6 +40,7 @@ const LeftSidebar = () => {
   const menuRef = useRef<HTMLDivElement>(null)
   const { mutate: logout, isPending: isLogoutPending } = useLogout()
   const { data: me, isLoading: isMeLoading } = useGetMe()
+  const { isLoggedIn, requireAuth } = useRequireAuth()
   const {
     data: unreadNotificationsCount,
     isLoading: isUnreadNotificationsCountLoading,
@@ -63,6 +65,7 @@ const LeftSidebar = () => {
     {
       href: "/home",
       label: "Home",
+      public: true,
       icon: {
         filled: <RiHome2Fill className="text-xl" />,
         outline: <RiHome2Line className="text-xl" />,
@@ -71,6 +74,7 @@ const LeftSidebar = () => {
     {
       href: "/search",
       label: "Search",
+      public: true,
       icon: {
         filled: <RiSearchFill className="text-xl" />,
         outline: <RiSearchLine className="text-xl" />,
@@ -179,6 +183,22 @@ const LeftSidebar = () => {
               <Loader2 className="animate-spin" size={22} />
               <p className="text-sm">Loading...</p>
             </div>
+          ) : !isLoggedIn ? (
+            <div className="flex flex-col gap-2 p-3 rounded-2xl border border-zinc-700">
+              <p className="text-sm font-semibold">New to Cuez?</p>
+              <Link
+                href="/login"
+                className="w-full text-center text-sm py-1.5 rounded-xl bg-mainclr text-white font-semibold hover:bg-mainclr/80 transition-all duration-200"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="w-full text-center text-sm py-1.5 rounded-xl border border-zinc-700 font-semibold hover:bg-zinc-800 transition-all duration-200"
+              >
+                Sign up
+              </Link>
+            </div>
           ) : (
             <div
               onClick={() => setIsOpen(!isOpen)}
@@ -245,8 +265,14 @@ const LeftSidebar = () => {
         <nav className="flex flex-col gap-1 select-none">
           {links.map((link) => (
             <Link
-              key={link.href}
+              key={link.label}
               href={link.href}
+              onClick={(e) => {
+                if (!isLoggedIn && !link.public) {
+                  e.preventDefault()
+                  requireAuth()
+                }
+              }}
               className="font-medium flex items-center gap-2 py-2.5 group/nav-link"
               style={{ fontWeight: pathname === link.href ? "600" : "normal" }}
             >

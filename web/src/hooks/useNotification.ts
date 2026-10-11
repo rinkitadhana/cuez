@@ -3,6 +3,7 @@ import config from "../config/config"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import axios, { AxiosError } from "axios"
 import { Notification } from "@/types/Notification"
+import { useIsLoggedIn } from "./useAuth"
 
 interface GetNotificationsResponse {
   message: string
@@ -116,9 +117,11 @@ const getUnreadNotificationsCount =
   }
 
 export const useGetUnreadNotificationsCount = () => {
+  const isLoggedIn = useIsLoggedIn()
   return useQuery<GetUnreadNotificationsCountResponse, AxiosError>({
     queryKey: ["unread-notifications-count"],
     queryFn: getUnreadNotificationsCount,
+    enabled: isLoggedIn,
     refetchInterval: 45000,
   })
 }

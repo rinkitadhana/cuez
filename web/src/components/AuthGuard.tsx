@@ -2,35 +2,55 @@
 
 import { useGetMe } from "@/hooks/useAuth"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import LoadingScreen from "./LoadingScreen"
+import LoginPrompt from "./LoginPrompt"
+import useLoginPromptStore from "@/store/LoginPromptStore"
 
-const authRoutes = ["/login", "/signup", "/forgot-password"]
+// Pages that only make sense for a logged-in user. Everything else (home,
+// post pages, profiles, search) is browsable by guests.
+const protectedRoutes = [
+  "/bookmarks",
+  "/chat",
+  "/jobs",
+  "/more",
+  "/notifications",
+  "/projects",
+  "/settings",
+]
+
+export const isProtectedRoute = (pathname: string) =>
+  pathname === "/post" ||
+  protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/")
+  )
 
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
-  const { data: user, isLoading } = useGetMe()
+  const { data: me, isPending } = useGetMe()
   const router = useRouter()
   const pathname = usePathname()
-  const hasRedirected = useRef(false)
+  const { setOpen } = useLoginPromptStore()
 
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
+  const isGuest = !isPending && !me?.user
+  const isBlocked = isGuest && isProtectedRoute(pathname)
 
   useEffect(() => {
-    if (!isLoading && !user && !isAuthRoute && !hasRedirected.current) {
-      hasRedirected.current = true
-      router.replace("/login")
+    if (isBlocked) {
+      router.replace("/home")
+      setOpen(true)
     }
-    // Reset the guard if auth state changes (e.g. user logs in).
-    if (user) hasRedirected.current = false
-  }, [isLoading, user, isAuthRoute, router])
+  }, [isBlocked, router, setOpen])
 
-  // Still resolving auth, or we know there's no user and are redirecting:
-  // hold on the loader instead of flashing the protected page.
-  if (!isAuthRoute && (isLoading || !user)) {
+  if (isPending || isBlocked) {
     return <LoadingScreen />
   }
 
-  return <>{children}</>
+  return (
+    <>
+      {children}
+      <LoginPrompt />
+    </>
+  )
 }
 
 export default AuthGuard
