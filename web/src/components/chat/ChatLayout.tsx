@@ -17,7 +17,7 @@ const ChatLayout = ({ conversationId }: { conversationId: string | null }) => {
         <div
           className={`${
             conversationId ? "hidden md:flex" : "flex"
-          } flex-col w-full md:w-[320px] lg:w-[360px] shrink-0 md:border-r md:border-zinc-700 min-h-0`}
+          } flex-col w-full md:w-[340px] lg:w-[400px] xl:w-[440px] shrink-0 md:border-r md:border-zinc-700 min-h-0`}
         >
           <ConversationList activeId={conversationId} />
         </div>
