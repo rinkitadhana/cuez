@@ -185,11 +185,12 @@ const updateUserProfile = async (
       user.coverImg = await uploadToR2(coverImg, "cuez/cover-images")
     }
 
-    user.fullName = fullName || user.fullName
+    // Empty strings clear bio/link/location; a name and username are required.
+    user.fullName = fullName?.trim() || user.fullName
     user.username = username || user.username
-    user.bio = bio || user.bio
-    user.link = link || user.link
-    user.location = location || user.location
+    if (typeof bio === "string") user.bio = bio.trim()
+    if (typeof link === "string") user.link = link.trim()
+    if (typeof location === "string") user.location = location.trim()
 
     await user.save()
     res.status(200).json({ message: "User profile updated successfully!" })
