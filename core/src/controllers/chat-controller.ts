@@ -320,15 +320,19 @@ const sendMessage = async (req: Request, res: Response) => {
     }
     if (
       replyTo &&
-      !(isId(replyTo) &&
-        (await Message.exists({ _id: replyTo, conversation: conversation._id })))
+      !(
+        isId(replyTo) &&
+        (await Message.exists({ _id: replyTo, conversation: conversation._id }))
+      )
     ) {
       res.status(400).json({ message: "Can't reply to that message!" })
       return
     }
 
     const imgUrl =
-      typeof img === "string" && img ? await uploadToR2(img, "cuez/chat") : undefined
+      typeof img === "string" && img
+        ? await uploadToR2(img, "cuez/chat")
+        : undefined
 
     const message = await Message.create({
       conversation: conversation._id,
@@ -337,7 +341,10 @@ const sendMessage = async (req: Request, res: Response) => {
       img: imgUrl,
       replyTo: replyTo || undefined,
     })
-    await message.populate({ path: "replyTo", select: "sender text img deletedAt" })
+    await message.populate({
+      path: "replyTo",
+      select: "sender text img deletedAt",
+    })
 
     // Sending counts as reading and as accepting a message request.
     await Conversation.updateOne(
@@ -442,7 +449,10 @@ const emitMessageUpdate = async (
   message: IMessage,
   participants: mongoose.Types.ObjectId[]
 ) => {
-  await message.populate({ path: "replyTo", select: "sender text img deletedAt" })
+  await message.populate({
+    path: "replyTo",
+    select: "sender text img deletedAt",
+  })
   emitToUsers(participants, "chat:message-updated", {
     conversationId: String(message.conversation),
     message: serializeMessage(message),
@@ -491,9 +501,7 @@ const reactToMessage = async (req: Request, res: Response) => {
     }
     const { message, conversation } = found
     const mine = message.reactions.find((r) => String(r.user) === meId)
-    message.reactions = message.reactions.filter(
-      (r) => String(r.user) !== meId
-    )
+    message.reactions = message.reactions.filter((r) => String(r.user) !== meId)
     if (mine?.emoji !== emoji) {
       message.reactions.push({
         user: new mongoose.Types.ObjectId(meId),
@@ -503,6 +511,113 @@ const reactToMessage = async (req: Request, res: Response) => {
     await message.save()
     await emitMessageUpdate(message, conversation.participants)
     res.status(200).json({ message: "Reaction updated" })
+  } catch (error) {
+    errorHandler(res, error)
+  }
+}
+
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+// GET /search?q= — people you have conversations with, and messages
+// (paginated) whose text matches, across your conversations.
+const searchChats = async (req: Request, res: Response) => {
+  try {
+    const meId = req.user._id.toString()
+    const q =
+      typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : ""
+    if (!q) {
+      res
+        .status(200)
+        .json({
+          message: "Empty query",
+          people: [],
+          messages: [],
+          nextCursor: null,
+        })
+      return
+    }
+    const pattern = { $regex: escapeRegex(q.replace(/^@/, "")), $options: "i" }
+    const isFirstPage = !req.query.cursor
+
+    const conversations = (await Conversation.find({
+      participants: meId,
+      lastMessageAt: { $exists: true },
+    })
+      .select("participants clearedAt lastMessageAt")
+      .populate({
+        path: "participants",
+        select: CHAT_USER_FIELDS,
+      })) as IConversation[]
+
+    // Only what I can still see: skip conversations cleared since their
+    // last message, and messages from before I cleared.
+    const visible = conversations.filter((c) => {
+      const cleared = getMap(c.clearedAt, meId)
+      return !cleared || (c.lastMessageAt && c.lastMessageAt > cleared)
+    })
+    const otherOf = (c: IConversation) =>
+      (
+        c.participants as unknown as {
+          _id: mongoose.Types.ObjectId
+          username: string
+          fullName?: string
+        }[]
+      ).find((p) => String(p._id) !== meId) ?? null
+
+    let people: Awaited<ReturnType<typeof serializeConversation>>[] = []
+    if (isFirstPage) {
+      const term = q.replace(/^@/, "").toLowerCase()
+      const matches = visible.filter((c) => {
+        const other = otherOf(c)
+        return (
+          !!other &&
+          (other.username?.toLowerCase().includes(term) ||
+            other.fullName?.toLowerCase().includes(term))
+        )
+      })
+      const full = (await populateConversation(
+        Conversation.find({ _id: { $in: matches.map((c) => c._id) } }).sort({
+          lastMessageAt: -1,
+        })
+      )) as IConversation[]
+      const followings = await getMyFollowings(meId)
+      people = await Promise.all(
+        full.slice(0, 10).map((c) => serializeConversation(c, meId, followings))
+      )
+    }
+
+    let messages: unknown[] = []
+    let nextCursor: string | null = null
+    if (visible.length) {
+      const { limit, cursorFilter, sort } = getPagination(req)
+      const found = await Message.find({
+        $and: [
+          {
+            $or: visible.map((c) => {
+              const cleared = getMap(c.clearedAt, meId)
+              return cleared
+                ? { conversation: c._id, createdAt: { $gt: cleared } }
+                : { conversation: c._id }
+            }),
+          },
+          { text: pattern, deletedAt: null },
+          cursorFilter,
+        ],
+      })
+        .sort(sort)
+        .limit(limit + 1)
+      const result = paginate(found, limit)
+      nextCursor = result.nextCursor
+      const byId = new Map(visible.map((c) => [String(c._id), otherOf(c)]))
+      messages = result.page.map((m) => ({
+        message: serializeMessage(m),
+        otherUser: byId.get(String(m.conversation)) ?? null,
+      }))
+    }
+
+    res
+      .status(200)
+      .json({ message: "Search results", people, messages, nextCursor })
   } catch (error) {
     errorHandler(res, error)
   }
@@ -520,4 +635,5 @@ export {
   clearConversation,
   unsendMessage,
   reactToMessage,
+  searchChats,
 }

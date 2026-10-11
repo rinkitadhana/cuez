@@ -9,6 +9,7 @@ import {
   getUnreadCount,
   markRead,
   reactToMessage,
+  searchChats,
   sendMessage,
   startConversation,
   unsendMessage,
@@ -19,6 +20,7 @@ router.use(protectRoute)
 router.get("/conversations", getConversations)
 router.post("/conversations", startConversation)
 router.get("/unread", getUnreadCount)
+router.get("/search", searchChats)
 router.get("/conversations/:id", getConversation)
 router.delete("/conversations/:id", clearConversation)
 router.get("/conversations/:id/messages", getMessages)
