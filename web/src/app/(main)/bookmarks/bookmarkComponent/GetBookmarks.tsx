@@ -1,12 +1,14 @@
 "use client"
 
-import React from "react"
 import { useGetBookmarkedPosts } from "@/hooks/usePost"
 import PostStructure from "@/components/pageComponents/PostStructure"
 import NoBookmark from "./NoBookmark"
 import PostSkeleton from "@/components/skeletons/PostSkeleton"
+import LoadMore from "@/components/LoadMore"
+
 const GetBookmarks = () => {
-  const { data: bookmarks, isLoading } = useGetBookmarkedPosts()
+  const { items, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useGetBookmarkedPosts()
   return (
     <div>
       {isLoading ? (
@@ -16,12 +18,19 @@ const GetBookmarks = () => {
           <PostSkeleton />
           <PostSkeleton />
         </div>
-      ) : bookmarks?.posts?.length === 0 ? (
+      ) : items.length === 0 ? (
         <NoBookmark />
       ) : (
-        bookmarks?.posts.map((post) => (
-          <PostStructure key={post._id} post={post} />
-        ))
+        <>
+          {items.map((post) => (
+            <PostStructure key={post._id} post={post} />
+          ))}
+          <LoadMore
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={fetchNextPage}
+          />
+        </>
       )}
     </div>
   )

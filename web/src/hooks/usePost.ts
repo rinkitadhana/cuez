@@ -5,40 +5,15 @@ import useFeedTypeStore from "@/store/FeedTypeStore"
 import useMessageStore from "@/store/messageStore"
 import { Post } from "../types/Post"
 import { useIsLoggedIn } from "./useAuth"
-
-interface GetPostsResponse {
-  message: string
-  posts: Post[]
-}
-
-const getPosts = async (feedType: string): Promise<GetPostsResponse> => {
-  const getPostEndPoint = () => {
-    switch (feedType) {
-      case "All":
-        return "/post/all-posts"
-      case "Following":
-        return "/post/following-posts"
-      default:
-        return "/post/all-posts"
-    }
-  }
-  try {
-    const response = await axios.get<GetPostsResponse>(
-      config.backendUrl + getPostEndPoint(),
-      { withCredentials: true }
-    )
-    return response.data
-  } catch (error) {
-    console.error("Error fetching posts:", error)
-    throw error
-  }
-}
+import { useInfiniteList } from "./useInfiniteList"
 
 export const useGetPosts = () => {
   const { feedType } = useFeedTypeStore()
-  return useQuery<GetPostsResponse, AxiosError>({
+  return useInfiniteList<Post, "posts">({
     queryKey: ["posts", feedType],
-    queryFn: () => getPosts(feedType),
+    path:
+      feedType === "Following" ? "/post/following-posts" : "/post/all-posts",
+    itemsKey: "posts",
   })
 }
 
@@ -352,47 +327,21 @@ export const useCommentPost = () => {
   })
 }
 
-interface GetUserPostsResponse {
-  message: string
-  userPosts: Post[]
-}
-
-const getUserPosts = async (
-  username: string
-): Promise<GetUserPostsResponse> => {
-  const { data } = await axios.get<GetUserPostsResponse>(
-    config.backendUrl + `/post/user-posts/${username}`,
-    { withCredentials: true }
-  )
-  return data
-}
-
 export const useGetUserPosts = (username: string) => {
-  return useQuery<GetUserPostsResponse, AxiosError>({
+  return useInfiniteList<Post, "userPosts">({
     queryKey: ["user-posts", username],
-    queryFn: () => getUserPosts(username),
+    path: `/post/user-posts/${username}`,
+    itemsKey: "userPosts",
+    enabled: !!username,
   })
 }
 
-interface GetLikedPostsResponse {
-  message: string
-  likedPosts: Post[]
-}
-
-const getLikedPosts = async (
-  username: string
-): Promise<GetLikedPostsResponse> => {
-  const { data } = await axios.get<GetLikedPostsResponse>(
-    config.backendUrl + `/post/liked-posts/${username}`,
-    { withCredentials: true }
-  )
-  return data
-}
-
 export const useGetLikedPosts = (username: string) => {
-  return useQuery<GetLikedPostsResponse, AxiosError>({
+  return useInfiniteList<Post, "likedPosts">({
     queryKey: ["liked-posts", username],
-    queryFn: () => getLikedPosts(username),
+    path: `/post/liked-posts/${username}`,
+    itemsKey: "likedPosts",
+    enabled: !!username,
   })
 }
 
@@ -416,6 +365,7 @@ export const useBookmarkPost = () => {
     mutationFn: bookmarkPost,
     onSuccess: (data: BookmarkPostResponse, postId) => {
       setMessage(data.message, "success")
+      queryClient.invalidateQueries({ queryKey: ["me"] })
       queryClient.invalidateQueries({ queryKey: ["posts"] })
       queryClient.invalidateQueries({ queryKey: ["post", postId] })
       queryClient.invalidateQueries({ queryKey: ["is-bookmarked", postId] })
@@ -461,23 +411,11 @@ export const useIsBookmarked = (postId: string) => {
   })
 }
 
-interface GetBookmarkedPostsResponse {
-  message: string
-  posts: Post[]
-}
-
-const getBookmarkedPosts = async (): Promise<GetBookmarkedPostsResponse> => {
-  const { data } = await axios.get<GetBookmarkedPostsResponse>(
-    config.backendUrl + `/post/bookmarked-posts`,
-    { withCredentials: true }
-  )
-  return data
-}
-
 export const useGetBookmarkedPosts = () => {
-  return useQuery<GetBookmarkedPostsResponse, AxiosError>({
+  return useInfiniteList<Post, "posts">({
     queryKey: ["bookmarked-posts"],
-    queryFn: () => getBookmarkedPosts(),
+    path: "/post/bookmarked-posts",
+    itemsKey: "posts",
   })
 }
 
@@ -528,23 +466,11 @@ export const useCreateReply = () => {
   })
 }
 
-interface GetRepliesResponse {
-  message: string
-  replies: Post[]
-}
-
-const getReplies = async (postId: string): Promise<GetRepliesResponse> => {
-  const { data } = await axios.get<GetRepliesResponse>(
-    config.backendUrl + `/post/replies/${postId}`,
-    { withCredentials: true }
-  )
-  return data
-}
-
 export const useGetReplies = (postId: string) => {
-  return useQuery<GetRepliesResponse, AxiosError>({
+  return useInfiniteList<Post, "replies">({
     queryKey: ["replies", postId],
-    queryFn: () => getReplies(postId),
+    path: `/post/replies/${postId}`,
+    itemsKey: "replies",
     enabled: !!postId,
   })
 }

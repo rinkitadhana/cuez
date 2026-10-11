@@ -4,9 +4,17 @@ import NotificationMessage from "./NotificationMessage"
 import Notification from "@/components/skeletons/Notification"
 import NoNotification from "./NoNotification"
 import { AlertCircle } from "lucide-react"
+import LoadMore from "@/components/LoadMore"
 
 const GetNotification = () => {
-  const { data, isLoading, error } = useGetNotifications()
+  const {
+    items,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useGetNotifications()
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col divide-y divide-zinc-800">
@@ -18,15 +26,22 @@ const GetNotification = () => {
           <p className="text-base">Failed to load notifications</p>
           <p className="text-sm text-zinc-500 mt-1">Please try again later</p>
         </div>
-      ) : data?.notifications.length === 0 ? (
+      ) : items.length === 0 ? (
         <NoNotification />
       ) : (
-        data?.notifications.map((notification) => (
-          <NotificationMessage
-            key={notification._id}
-            notification={notification}
+        <>
+          {items.map((notification) => (
+            <NotificationMessage
+              key={notification._id}
+              notification={notification}
+            />
+          ))}
+          <LoadMore
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={fetchNextPage}
           />
-        ))
+        </>
       )}
     </div>
   )

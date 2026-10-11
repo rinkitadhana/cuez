@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import axios, { AxiosError } from "axios"
 import { User } from "@/types/User"
 import { useIsLoggedIn } from "./useAuth"
+import { useInfiniteList } from "./useInfiniteList"
 
 interface SuggestedUsersResponse {
   message: string
@@ -172,49 +173,21 @@ export const useUpdateUserProfile = () => {
   })
 }
 
-interface GetFollowersResponse {
-  message: string
-  followers: User[]
-}
-
-const getFollowers = async (
-  username: string
-): Promise<GetFollowersResponse> => {
-  const response = await axios.get<GetFollowersResponse>(
-    config.backendUrl + `/user/followers/${username}`,
-    { withCredentials: true }
-  )
-  return response.data
-}
-
-export const useGetFollowers = (username: string) => {
-  return useQuery<GetFollowersResponse, AxiosError>({
+export const useGetFollowers = (username: string, enabled = true) => {
+  return useInfiniteList<User, "followers">({
     queryKey: ["followers", username],
-    queryFn: () => getFollowers(username),
-    enabled: !!username,
+    path: `/user/followers/${username}`,
+    itemsKey: "followers",
+    enabled: enabled && !!username,
   })
 }
 
-interface GetFollowingResponse {
-  message: string
-  followings: User[]
-}
-
-const getFollowing = async (
-  username: string
-): Promise<GetFollowingResponse> => {
-  const response = await axios.get<GetFollowingResponse>(
-    config.backendUrl + `/user/followings/${username}`,
-    { withCredentials: true }
-  )
-  return response.data
-}
-
-export const useGetFollowing = (username: string) => {
-  return useQuery<GetFollowingResponse, AxiosError>({
+export const useGetFollowing = (username: string, enabled = true) => {
+  return useInfiniteList<User, "followings">({
     queryKey: ["followings", username],
-    queryFn: () => getFollowing(username),
-    enabled: !!username,
+    path: `/user/followings/${username}`,
+    itemsKey: "followings",
+    enabled: enabled && !!username,
   })
 }
 

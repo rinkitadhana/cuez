@@ -2,7 +2,7 @@ import UserInfo from "@/components/pageComponents/UserInfo"
 import { useGetFollowing, useGetFollowers } from "@/hooks/useUser"
 import { User } from "@/types/User"
 import { X } from "lucide-react"
-import React from "react"
+import LoadMore from "@/components/LoadMore"
 
 const GetUsersList = ({
   user,
@@ -15,16 +15,22 @@ const GetUsersList = ({
   isOpen: boolean
   onClose: () => void
 }) => {
-  const { data: followers, isLoading: isFollowersLoading } = useGetFollowers(
-    user.username
+  // Only fetch the list that's actually open.
+  const followers = useGetFollowers(
+    user.username,
+    isOpen && type === "followers"
   )
-  const { data: following, isLoading: isFollowingLoading } = useGetFollowing(
-    user.username
+  const following = useGetFollowing(
+    user.username,
+    isOpen && type === "following"
   )
-  const data =
-    type === "followers" ? followers?.followers : following?.followings
-  const isLoading =
-    type === "followers" ? isFollowersLoading : isFollowingLoading
+  const {
+    items: data,
+    isPending: isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = type === "followers" ? followers : following
 
   if (!isOpen) return null
 
@@ -51,16 +57,23 @@ const GetUsersList = ({
         <div className="flex flex-col gap-5 p-4">
           {isLoading ? (
             <p className="text-center text-zinc-400 py-4">Loading...</p>
-          ) : data?.length === 0 ? (
+          ) : data.length === 0 ? (
             <p className="text-center text-zinc-400 py-4">
               No {type === "followers" ? "followers" : "following"} yet
             </p>
           ) : (
-            data?.map((user: User) => (
-              <div key={user._id}>
-                <UserInfo user={user} />
-              </div>
-            ))
+            <>
+              {data.map((user: User) => (
+                <div key={user._id}>
+                  <UserInfo user={user} />
+                </div>
+              ))}
+              <LoadMore
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                fetchNextPage={fetchNextPage}
+              />
+            </>
           )}
         </div>
       </div>

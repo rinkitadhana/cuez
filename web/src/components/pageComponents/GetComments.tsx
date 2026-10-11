@@ -1,12 +1,13 @@
-import React from "react"
 import { useGetReplies } from "@/hooks/usePost"
 import { useParams } from "next/navigation"
 import PostStructure from "./PostStructure"
 import { Loader2 } from "lucide-react"
+import LoadMore from "../LoadMore"
 
 const GetComments = () => {
   const { id: postId } = useParams()
-  const { data: repliesData, isPending } = useGetReplies(postId as string)
+  const { items, isPending, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useGetReplies(postId as string)
 
   if (isPending) {
     return (
@@ -16,7 +17,7 @@ const GetComments = () => {
     )
   }
 
-  if (!repliesData?.replies || repliesData.replies.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="py-8 text-center text-gray-500">
         No replies yet. Be the first to reply!
@@ -26,9 +27,14 @@ const GetComments = () => {
 
   return (
     <div className="replies-container">
-      {repliesData.replies.map((reply) => (
+      {items.map((reply) => (
         <PostStructure key={reply._id} post={reply} />
       ))}
+      <LoadMore
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        fetchNextPage={fetchNextPage}
+      />
     </div>
   )
 }

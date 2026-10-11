@@ -11,6 +11,8 @@ export const userSchema = z.lazy(() =>
     bio: z.string(),
     link: z.string(),
     likedPosts: z.array(z.string()),
+    // Only present on the logged-in user (/auth/me).
+    bookmarks: z.array(z.string()).optional(),
     cuezBadge: z.boolean(),
     location: z.string(),
     createdAt: z.string(),

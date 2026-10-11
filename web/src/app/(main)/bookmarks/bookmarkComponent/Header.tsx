@@ -1,11 +1,12 @@
 "use client"
 
 import MenuButton from "@/layout/MenuButton"
-import { useGetBookmarkedPosts } from "@/hooks/usePost"
+import { useGetMe } from "@/hooks/useAuth"
 import { Loader2 } from "lucide-react"
 
 const Header = () => {
-  const { data: bookmarks, isLoading } = useGetBookmarkedPosts()
+  // Total comes from the user record; the list itself is paginated.
+  const { data: me, isLoading } = useGetMe()
   return (
     <div className="flex w-full select-none justify-between items-center border-b h-[60px] border-zinc-700 sticky top-0 bg-bgClr px-4 z-10">
       <div className=" flex items-center gap-4 ">
@@ -16,7 +17,7 @@ const Header = () => {
         {isLoading ? (
           <Loader2 className="animate-spin" />
         ) : (
-          `${bookmarks?.posts?.length} Posts`
+          `${me?.user.bookmarks?.length ?? 0} Posts`
         )}
       </div>
     </div>

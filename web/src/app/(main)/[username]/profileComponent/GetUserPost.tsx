@@ -1,38 +1,46 @@
 import PostStructure from "@/components/pageComponents/PostStructure"
 import { useGetUserPosts } from "@/hooks/usePost"
-import { Post } from "@/types/Post"
 import { useParams } from "next/navigation"
-import React from "react"
 import PostSkeleton from "@/components/skeletons/PostSkeleton"
 import NoProfilePosts from "@/components/notAvailable/NoProfilePosts"
+import LoadMore from "@/components/LoadMore"
+
 const GetUserPost = () => {
   const { username } = useParams()
-  const { data, isLoading, error } = useGetUserPosts(username as string)
+  const {
+    items,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useGetUserPosts(username as string)
+
+  if (isLoading) {
+    return (
+      <>
+        <PostSkeleton />
+        <PostSkeleton />
+        <PostSkeleton />
+      </>
+    )
+  }
+
+  if (error) return <div>{error.message}</div>
+
+  if (items.length === 0) return <NoProfilePosts />
 
   return (
-    <>
-      {isLoading && (
-        <>
-          <PostSkeleton />
-          <PostSkeleton />
-          <PostSkeleton />
-        </>
-      )}
-      {error && <div>{error.message}</div>}
-      {data && (
-        <>
-          {data?.userPosts.length === 0 ? (
-            <NoProfilePosts />
-          ) : (
-            <div>
-              {data?.userPosts.map((post: Post) => (
-                <PostStructure key={post._id} post={post} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </>
+    <div>
+      {items.map((post) => (
+        <PostStructure key={post._id} post={post} />
+      ))}
+      <LoadMore
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        fetchNextPage={fetchNextPage}
+      />
+    </div>
   )
 }
 

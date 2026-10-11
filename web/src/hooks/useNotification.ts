@@ -4,26 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import axios, { AxiosError } from "axios"
 import { Notification } from "@/types/Notification"
 import { useIsLoggedIn } from "./useAuth"
-
-interface GetNotificationsResponse {
-  message: string
-  notifications: Notification[]
-}
-
-const getNotifications = async (): Promise<GetNotificationsResponse> => {
-  const response = await axios.get<GetNotificationsResponse>(
-    `${config.backendUrl}/notification`,
-    {
-      withCredentials: true,
-    }
-  )
-  return response.data
-}
+import { useInfiniteList } from "./useInfiniteList"
 
 export const useGetNotifications = () => {
-  return useQuery<GetNotificationsResponse, AxiosError>({
+  return useInfiniteList<Notification, "notifications">({
     queryKey: ["notifications"],
-    queryFn: getNotifications,
+    path: "/notification",
+    itemsKey: "notifications",
   })
 }
 
