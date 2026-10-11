@@ -2,7 +2,7 @@
 import Header from "./profileComponent/Header"
 import Image from "next/image"
 import SafeImage from "@/components/media/SafeImage"
-import { Calendar, Link, Loader2, Mail, MapPin } from "lucide-react"
+import { Calendar, Link as LinkIcon, Loader2, Mail, MapPin } from "lucide-react"
 import { useFollowUnfollowUser, useGetUserProfile } from "@/hooks/useUser"
 import { useParams, useRouter } from "next/navigation"
 import { useStartConversation } from "@/hooks/useChat"
@@ -13,11 +13,11 @@ import GetUserReplies from "./profileComponent/GetUserReplies"
 import { useState } from "react"
 import ProfileSkeleton from "@/components/skeletons/ProfileSkeleton"
 import NoUser from "@/components/notAvailable/NoUser"
-import GetUsersList from "./profileComponent/GetUsersList"
 import FollowsYou from "@/components/pageComponents/FollowsYou"
 import PageHead from "@/components/pageComponents/PageHead"
 import MediaLightbox from "@/components/media/MediaLightbox"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import Link from "next/link"
 const UserProfile = () => {
   const { username } = useParams()
   const [response, setResponse] = useState<string>("user-posts")
@@ -30,10 +30,6 @@ const UserProfile = () => {
   const { mutate: startConversation, isPending: isStartingChat } =
     useStartConversation()
   const { mutate: followUnfollowUser } = useFollowUnfollowUser()
-  const [isUsersListOpen, setIsUsersListOpen] = useState(false)
-  const [userType, setUserType] = useState<"followers" | "following">(
-    "followers"
-  )
   const user = data?.user
   // Derived from cached data so optimistic updates show instantly.
   const meId = authUser?.user._id
@@ -169,7 +165,7 @@ const UserProfile = () => {
                 </div>
                 {user?.link && (
                   <div className="flex gap-1 items-center">
-                    <Link size={14} />{" "}
+                    <LinkIcon size={14} />{" "}
                     <a
                       href={`https://${formatLink(user?.link || "")}`}
                       target="_blank"
@@ -186,26 +182,20 @@ const UserProfile = () => {
                 </div>
               </div>
               <div className="flex gap-4 items-center">
-                <button
-                  onClick={() => {
-                    setUserType("following")
-                    setIsUsersListOpen(true)
-                  }}
+                <Link
+                  href={`/${user?.username}/followers?tab=following`}
                   className="flex gap-1 hover:underline"
                 >
                   <span>{user?.followings.length}</span>{" "}
                   <span className="text-zinc-400">Following</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setUserType("followers")
-                    setIsUsersListOpen(true)
-                  }}
+                </Link>
+                <Link
+                  href={`/${user?.username}/followers?tab=followers`}
                   className="flex gap-1 hover:underline"
                 >
                   <span>{user?.followers.length}</span>{" "}
                   <span className="text-zinc-400">Followers</span>
-                </button>
+                </Link>
               </div>
             </div>
             <div className="flex items-center justify-center mt-3  py-2.5 border-b border-zinc-700">
@@ -252,14 +242,6 @@ const UserProfile = () => {
         open={isCoverImageModalOpen && !!user?.coverImg}
         onClose={() => setIsCoverImageModalOpen(false)}
       />
-      {user && (
-        <GetUsersList
-          user={user}
-          type={userType}
-          isOpen={isUsersListOpen}
-          onClose={() => setIsUsersListOpen(false)}
-        />
-      )}
     </>
   )
 }
