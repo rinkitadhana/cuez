@@ -11,13 +11,11 @@ import {
   useBookmarkPost,
   useDeletePost,
   useGetPostById,
-  useIsBookmarked,
-  useIsLiked,
   useLikeUnlikePost,
   useGetReplyCount,
   useGetParentThread,
 } from "@/hooks/usePost"
-import { Loader2, X } from "lucide-react"
+import { X } from "lucide-react"
 import config from "@/config/config"
 import useMessageStore from "@/store/messageStore"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -30,7 +28,6 @@ import GetComments from "@/components/pageComponents/GetComments"
 import PostSkeleton from "@/components/skeletons/PostSkeleton"
 import PostWithoutImage from "@/components/skeletons/PostWithoutImage"
 import EditPost from "@/components/pageComponents/EditPost"
-import { useIsFollowing } from "@/hooks/useUser"
 import { useFollowUnfollowUser } from "@/hooks/useUser"
 import CuezBadge from "@/components/pageComponents/CuezBadge"
 import PageHead from "@/components/pageComponents/PageHead"
@@ -51,19 +48,17 @@ const PostPage = () => {
   const [commentActive, setCommentActive] = useState(false)
   const { data: authUser } = useGetMe()
   const { requireAuth } = useRequireAuth()
-  const { mutate: deletePost, isPending: isDeletePending } = useDeletePost()
-  const { mutate: likeUnlikePost, isPending: isLikeUnlikePending } =
-    useLikeUnlikePost()
-  const { data: isFollowing, isLoading: isFollowingPending } = useIsFollowing(
-    post?.post?.user?._id || ""
-  )
-  const { mutate: followUnfollowUser, isPending: isFollowUnfollowPending } =
-    useFollowUnfollowUser()
-  const { mutate: bookmarkPost, isPending: isBookmarkPending } =
-    useBookmarkPost()
-  const { data: isBookmarked, isLoading: isBookmarkedPending } =
-    useIsBookmarked(id as string)
-  const { data: isLiked, isLoading: isLikedPending } = useIsLiked(id as string)
+  const { mutate: deletePost } = useDeletePost()
+  const { mutate: likeUnlikePost } = useLikeUnlikePost()
+  const { mutate: followUnfollowUser } = useFollowUnfollowUser()
+  const { mutate: bookmarkPost } = useBookmarkPost()
+  // Derived from cached data so optimistic updates show instantly.
+  const meId = authUser?.user._id
+  const authorId = post?.post?.user?._id
+  const isLiked = !!meId && !!post?.post.likes.includes(meId)
+  const isBookmarked = !!meId && !!post?.post.bookmarks.includes(meId)
+  const isFollowing =
+    !!authorId && !!authUser?.user.followings.includes(authorId)
   const { data: replyCount } = useGetReplyCount(id as string)
   const isUpdated =
     post?.post.editedAt &&
@@ -109,13 +104,10 @@ const PostPage = () => {
 
   const handleDeletePost = () => {
     if (!post?.post._id) return
-    deletePost(post.post._id, {
-      onSuccess: () => {
-        setIsOpen(false)
-        setShowWarning(false)
-        router.back()
-      },
-    })
+    deletePost(post.post._id)
+    setIsOpen(false)
+    setShowWarning(false)
+    router.back()
   }
 
   const userProfile = () => {
@@ -190,7 +182,7 @@ const PostPage = () => {
     }
     return new Date(date).toLocaleString("en-US", options)
   }
-  const isOwner = authUser?.user._id === post?.post?.user?._id
+  const isOwner = !!meId && meId === authorId
 
   return (
     <MainWrapper>
@@ -242,9 +234,8 @@ const PostPage = () => {
                           {post?.post?.user?.cuezBadge && <CuezBadge />}
                         </div>
                         {!isOwner &&
-                          (isFollowingPending ? (
-                            <div className=" text-sm text-zinc-400">...</div>
-                          ) : isFollowing?.isFollowing ? (
+                          authorId &&
+                          (isFollowing ? (
                             <div className="text-xs text-zinc-400">
                               Following
                             </div>
@@ -252,19 +243,12 @@ const PostPage = () => {
                             <div
                               onClick={() =>
                                 requireAuth("follow", () =>
-                                  followUnfollowUser(post?.post?.user?._id || "")
+                                  followUnfollowUser(authorId)
                                 )
                               }
+                              className="text-xs font-semibold text-blue-500 hover:underline cursor-pointer"
                             >
-                              {isFollowUnfollowPending ? (
-                                <div className=" text-sm text-zinc-400">
-                                  ...
-                                </div>
-                              ) : (
-                                <div className="text-xs font-semibold text-blue-500 hover:underline cursor-pointer">
-                                  Follow
-                                </div>
-                              )}
+                              Follow
                             </div>
                           ))}
                       </div>
@@ -370,15 +354,15 @@ const PostPage = () => {
                           onClick={handleLikeUnlikePost}
                           className="flex items-center gap-1 p-1.5 hover:bg-pink-500/30 group/like rounded-lg transition-all duration-200"
                         >
-                          {isLikeUnlikePending || isLikedPending ? (
-                            <Loader2 className="animate-spin size-[18px]" />
-                          ) : isLiked?.liked ? (
+                          {isLiked ? (
                             <BiSolidUpvote className="group-hover/like:-translate-y-0.5 text-pink-500 transition-all duration-300" />
                           ) : (
                             <BiUpvote className="group-hover/like:-translate-y-0.5 transition-all duration-300" />
                           )}
                         </button>
-                        <span className="text-sm">
+                        <span
+                          className={`text-sm ${isLiked ? "text-pink-500" : ""}`}
+                        >
                           {post?.post?.likes?.length}
                         </span>
                       </div>
@@ -395,9 +379,7 @@ const PostPage = () => {
                           }}
                           className="p-1.5 hover:bg-blue-500/30 rounded-lg transition-all duration-200"
                         >
-                          {isBookmarkPending || isBookmarkedPending ? (
-                            <Loader2 className="animate-spin size-[18px]" />
-                          ) : isBookmarked?.isBookmarked ? (
+                          {isBookmarked ? (
                             <IoBookmark className="text-blue-500" />
                           ) : (
                             <IoBookmarkOutline />
@@ -442,11 +424,7 @@ const PostPage = () => {
                     onClick={handleDeletePost}
                     className="px-4 py-1.5 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
                   >
-                    {isDeletePending ? (
-                      <Loader2 className="animate-spin" />
-                    ) : (
-                      "Delete"
-                    )}
+                    Delete
                   </button>
                 </div>
               </div>

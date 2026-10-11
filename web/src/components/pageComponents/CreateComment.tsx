@@ -102,22 +102,20 @@ const CreateComment = ({ commentActive }: { commentActive: boolean }) => {
         replyData.video = base64Video
       }
 
+      // The reply shows up in the list right away, so clear the box now and
+      // put the draft back if the server rejects it.
+      const draft = { formData, selectedFiles }
+      setFormData({ text: "", img: "", video: "" })
+      setSelectedFiles({})
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto"
+      }
       createReply(
+        { postData: replyData, parentId: postId as string },
         {
-          postData: replyData,
-          parentId: postId as string,
-        },
-        {
-          onSuccess: () => {
-            setFormData({
-              text: "",
-              img: "",
-              video: "",
-            })
-            setSelectedFiles({})
-            if (textareaRef.current) {
-              textareaRef.current.style.height = "auto"
-            }
+          onError: () => {
+            setFormData(draft.formData)
+            setSelectedFiles(draft.selectedFiles)
           },
         }
       )

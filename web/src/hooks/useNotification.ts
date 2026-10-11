@@ -1,10 +1,26 @@
 import useMessageStore from "@/store/messageStore"
 import config from "../config/config"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  InfiniteData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import axios, { AxiosError } from "axios"
 import { Notification } from "@/types/Notification"
 import { useIsLoggedIn } from "./useAuth"
 import { useInfiniteList } from "./useInfiniteList"
+import { Snapshot, restore, snapshot } from "@/lib/queryCache"
+
+type NotificationPages = InfiniteData<{
+  notifications: Notification[]
+  nextCursor?: string | null
+}>
+
+const notificationQueries = [
+  { queryKey: ["notifications"] },
+  { queryKey: ["unread-notifications-count"] },
+]
 
 export const useGetNotifications = () => {
   return useInfiniteList<Notification, "notifications">({
@@ -32,16 +48,34 @@ const deleteAllNotifications =
 export const useDeleteAllNotifications = () => {
   const queryClient = useQueryClient()
   const { setMessage } = useMessageStore()
-  return useMutation<DeleteAllNotificationsResponse, AxiosError>({
+  return useMutation<
+    DeleteAllNotificationsResponse,
+    AxiosError,
+    void,
+    { snap?: Snapshot }
+  >({
     mutationFn: deleteAllNotifications,
+    onMutate: async () => {
+      const snap = await snapshot(queryClient, notificationQueries)
+      queryClient.setQueryData<NotificationPages>(
+        ["notifications"],
+        (data) =>
+          data && {
+            pages: [{ notifications: [], nextCursor: null }],
+            pageParams: [null],
+          }
+      )
+      queryClient.setQueryData<GetUnreadNotificationsCountResponse>(
+        ["unread-notifications-count"],
+        (old) => old && { ...old, count: 0 }
+      )
+      return { snap }
+    },
     onSuccess: (data: DeleteAllNotificationsResponse) => {
       setMessage(data.message, "success")
-      queryClient.invalidateQueries({ queryKey: ["notifications"] })
-      queryClient.invalidateQueries({
-        queryKey: ["unread-notifications-count"],
-      })
     },
-    onError: (error: AxiosError) => {
+    onError: (error: AxiosError, _, context) => {
+      restore(queryClient, context?.snap)
       const message =
         (error.response?.data as DeleteAllNotificationsResponse)?.message ||
         "Failed to delete all notifications!"
@@ -69,20 +103,39 @@ const deleteNotification = async (
 export const useDeleteNotification = () => {
   const queryClient = useQueryClient()
   const { setMessage } = useMessageStore()
-  return useMutation<DeleteNotificationResponse, AxiosError, string>({
+  return useMutation<
+    DeleteNotificationResponse,
+    AxiosError,
+    string,
+    { snap?: Snapshot }
+  >({
     mutationFn: deleteNotification,
-    onSuccess: (data: DeleteNotificationResponse) => {
-      setMessage(data.message, "success")
-      queryClient.invalidateQueries({ queryKey: ["notifications"] })
-      queryClient.invalidateQueries({
-        queryKey: ["unread-notifications-count"],
-      })
+    onMutate: async (id) => {
+      const snap = await snapshot(queryClient, notificationQueries)
+      queryClient.setQueryData<NotificationPages>(
+        ["notifications"],
+        (data) =>
+          data && {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              notifications: page.notifications.filter((n) => n._id !== id),
+            })),
+          }
+      )
+      return { snap }
     },
-    onError: (error: AxiosError) => {
+    onError: (error: AxiosError, _, context) => {
+      restore(queryClient, context?.snap)
       const message =
         (error.response?.data as DeleteNotificationResponse)?.message ||
         "Failed to delete notification!"
       setMessage(message, "error")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["unread-notifications-count"],
+      })
     },
   })
 }

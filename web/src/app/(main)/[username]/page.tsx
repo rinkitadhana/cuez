@@ -2,13 +2,8 @@
 import MainWrapper from "@/layout/MainWrapper"
 import Header from "./profileComponent/Header"
 import Image from "next/image"
-import { Calendar, Link, Loader2, MapPin, X } from "lucide-react"
-import {
-  useFollowUnfollowUser,
-  useGetFollowsYou,
-  useGetUserProfile,
-  useIsFollowing,
-} from "@/hooks/useUser"
+import { Calendar, Link, MapPin, X } from "lucide-react"
+import { useFollowUnfollowUser, useGetUserProfile } from "@/hooks/useUser"
 import { useParams } from "next/navigation"
 import { useGetMe } from "@/hooks/useAuth"
 import GetUserPost from "./profileComponent/GetUserPost"
@@ -28,16 +23,17 @@ const UserProfile = () => {
   const { data, isLoading, isError } = useGetUserProfile(username as string)
   const { data: authUser } = useGetMe()
   const { requireAuth } = useRequireAuth()
-  const { mutate: followUnfollowUser, isPending: isFollowUnfollowPending } =
-    useFollowUnfollowUser()
-  const { data: followsYou } = useGetFollowsYou(data?.user._id || "")
+  const { mutate: followUnfollowUser } = useFollowUnfollowUser()
   const [isUsersListOpen, setIsUsersListOpen] = useState(false)
   const [userType, setUserType] = useState<"followers" | "following">(
     "followers"
   )
-  const { data: isFollowing } = useIsFollowing(data?.user._id || "")
   const user = data?.user
-  const owner = authUser?.user._id === user?._id
+  // Derived from cached data so optimistic updates show instantly.
+  const meId = authUser?.user._id
+  const owner = !!meId && meId === user?._id
+  const isFollowing = !!user && !!authUser?.user.followings.includes(user._id)
+  const followsYou = !!meId && !!user?.followings.includes(meId)
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleString("en-US", { month: "long", year: "numeric" })
@@ -88,27 +84,19 @@ const UserProfile = () => {
               />
               {!owner && (
                 <>
-                  {isFollowing?.isFollowing ? (
+                  {isFollowing ? (
                     <button
                       onClick={handleFollowUnfollow}
                       className="absolute -bottom-[50px] right-5 bg-zinc-800 text-white font-semibold hover:bg-zinc-700 transition-all duration-200 px-4 py-1.5 rounded-xl"
                     >
-                      {isFollowUnfollowPending ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        "Following"
-                      )}
+                      Following
                     </button>
                   ) : (
                     <button
                       onClick={handleFollowUnfollow}
                       className="absolute -bottom-[50px] right-5 bg-mainclr text-white font-semibold hover:bg-mainclr/80 transition-all duration-200 px-4 py-1.5 rounded-xl"
                     >
-                      {isFollowUnfollowPending ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        "Follow"
-                      )}
+                      Follow
                     </button>
                   )}
                 </>
@@ -138,7 +126,7 @@ const UserProfile = () => {
                   <p className="text-sm text-zinc-400 -mt-0.5">
                     @{user?.username}
                   </p>
-                  {followsYou?.followsYou && <FollowsYou />}
+                  {followsYou && <FollowsYou />}
                 </div>
               </div>
               <p className="">{user?.bio}</p>

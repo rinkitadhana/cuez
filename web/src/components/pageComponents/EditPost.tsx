@@ -104,18 +104,12 @@ const EditPost = ({ post }: { post: Post }) => {
         postData.video = base64Video
       }
 
+      // The edit is applied to the post immediately; reopen on failure.
+      setIsModalOpen(false)
+      setShowWarning(false)
       editPost(
-        {
-          postId: post._id,
-          postData,
-        },
-        {
-          onSuccess: () => {
-            setIsModalOpen(false)
-            setShowWarning(false)
-          },
-          onError: () => {},
-        }
+        { postId: post._id, postData },
+        { onError: () => setIsModalOpen(true) }
       )
     } catch (error) {
       console.error("Error processing files:", error)

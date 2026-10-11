@@ -56,11 +56,9 @@ const ProfilePage = () => {
   }, [authUser])
 
   const updateProfile = () => {
-    updateUserProfile(formData, {
-      onSuccess: () => {
-        router.push(`/${authUser?.user?.username}`)
-      },
-    })
+    // Profile changes are applied optimistically, so go straight to it.
+    updateUserProfile(formData)
+    router.push(`/${authUser?.user?.username}`)
   }
 
   const handleChange = (

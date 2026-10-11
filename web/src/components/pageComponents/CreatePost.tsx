@@ -99,21 +99,17 @@ const CreatePost = () => {
         postData.video = base64Video
       }
 
+      // The post shows up in the feed right away; close now and reopen
+      // with the draft intact if the server rejects it.
+      setIsModalOpen(false)
+      setShowWarning(false)
+      setIsLoading(false)
       post(postData, {
         onSuccess: () => {
-          setFormData({
-            text: "",
-            img: "",
-            video: "",
-          })
+          setFormData({ text: "", img: "", video: "" })
           setSelectedFiles({})
-          setIsModalOpen(false)
-          setShowWarning(false)
-          setIsLoading(false)
         },
-        onError: () => {
-          setIsLoading(false)
-        },
+        onError: () => setIsModalOpen(true),
       })
     } catch (error) {
       console.error("Error processing files:", error)

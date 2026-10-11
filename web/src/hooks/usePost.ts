@@ -4,8 +4,28 @@ import axios, { AxiosError } from "axios"
 import useFeedTypeStore from "@/store/FeedTypeStore"
 import useMessageStore from "@/store/messageStore"
 import { Post } from "../types/Post"
-import { useIsLoggedIn } from "./useAuth"
 import { useInfiniteList } from "./useInfiniteList"
+import {
+  OPTIMISTIC_PREFIX,
+  Snapshot,
+  findPost,
+  getMe,
+  isOptimisticId,
+  postQueries,
+  prependToList,
+  restore,
+  snapshot,
+  toggleId,
+  updateMe,
+  updatePost,
+} from "@/lib/queryCache"
+
+interface MessageResponse {
+  message: string
+}
+
+const errorMessage = (error: AxiosError, fallback: string) =>
+  (error.response?.data as MessageResponse)?.message || fallback
 
 export const useGetPosts = () => {
   const { feedType } = useFeedTypeStore()
@@ -17,10 +37,6 @@ export const useGetPosts = () => {
   })
 }
 
-interface CreatePostResponse {
-  message: string
-}
-
 interface CreatePostData {
   text?: string
   img?: string
@@ -28,61 +44,78 @@ interface CreatePostData {
   parentId?: string
 }
 
-const createPost = async (
-  postData: CreatePostData
-): Promise<CreatePostResponse> => {
-  const { data } = await axios.post<CreatePostResponse>(
+const createPost = async (postData: CreatePostData) => {
+  const { data } = await axios.post<MessageResponse>(
     config.backendUrl + "/post/create-post",
     postData,
-    {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+    { withCredentials: true }
   )
   return data
+}
+
+// Placeholder shown in lists until the server returns the real post.
+const buildOptimisticPost = (
+  user: Post["user"],
+  data: CreatePostData
+): Post => {
+  const now = new Date().toISOString()
+  return {
+    _id: `${OPTIMISTIC_PREFIX}${Date.now()}`,
+    user,
+    text: data.text || undefined,
+    img: data.img || undefined,
+    video: data.video || undefined,
+    parent: data.parentId,
+    likes: [],
+    bookmarks: [],
+    createdAt: now,
+    updatedAt: now,
+  }
 }
 
 export const useCreatePost = () => {
   const { setMessage } = useMessageStore()
   const queryClient = useQueryClient()
-  return useMutation<CreatePostResponse, AxiosError, CreatePostData>({
+  return useMutation<
+    MessageResponse,
+    AxiosError,
+    CreatePostData,
+    { snap?: Snapshot; username?: string }
+  >({
     mutationFn: createPost,
-    onSuccess: (data: CreatePostResponse) => {
-      setMessage(data.message, "success")
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["user-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["liked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["bookmarked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked"] })
-      queryClient.invalidateQueries({ queryKey: ["reply-count"] })
-      queryClient.invalidateQueries({ queryKey: ["replies"] })
-      queryClient.invalidateQueries({ queryKey: ["is-liked"] })
-      queryClient.invalidateQueries({ queryKey: ["post"] })
+    onMutate: async (postData) => {
+      const me = getMe(queryClient)
+      if (!me) return {}
+      const snap = await snapshot(queryClient, [postQueries])
+      const optimistic = buildOptimisticPost(me, postData)
+      prependToList(queryClient, ["posts", "All"], "posts", optimistic)
+      prependToList(
+        queryClient,
+        ["user-posts", me.username],
+        "userPosts",
+        optimistic
+      )
+      return { snap, username: me.username }
     },
-    onError: (error: AxiosError) => {
-      const message =
-        (error.response?.data as CreatePostResponse)?.message ||
-        "Create Post failed!"
-      setMessage(message, "error")
+    onSuccess: (data) => setMessage(data.message, "success"),
+    onError: (error, _, context) => {
+      restore(queryClient, context?.snap)
+      setMessage(errorMessage(error, "Create Post failed!"), "error")
+    },
+    onSettled: (_, __, ___, context) => {
+      // Swap the placeholder for the real post (ids, media URLs).
+      queryClient.invalidateQueries({ queryKey: ["posts", "All"] })
+      queryClient.invalidateQueries({
+        queryKey: ["user-posts", context?.username],
+      })
     },
   })
 }
 
-interface DeletePostResponse {
-  message: string
-}
-
-const deletePost = async (postId: string): Promise<DeletePostResponse> => {
-  const { data } = await axios.delete<DeletePostResponse>(
+const deletePost = async (postId: string) => {
+  const { data } = await axios.delete<MessageResponse>(
     config.backendUrl + `/post/delete-post/${postId}`,
-    {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+    { withCredentials: true }
   )
   return data
 }
@@ -90,31 +123,34 @@ const deletePost = async (postId: string): Promise<DeletePostResponse> => {
 export const useDeletePost = () => {
   const { setMessage } = useMessageStore()
   const queryClient = useQueryClient()
-  return useMutation<DeletePostResponse, AxiosError, string>({
+  return useMutation<
+    MessageResponse,
+    AxiosError,
+    string,
+    { snap?: Snapshot; parentId?: string }
+  >({
     mutationFn: deletePost,
-    onSuccess: (data: DeletePostResponse) => {
-      setMessage(data.message, "success")
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["user-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["liked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["bookmarked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked"] })
-      queryClient.invalidateQueries({ queryKey: ["reply-count"] })
-      queryClient.invalidateQueries({ queryKey: ["replies"] })
-      queryClient.invalidateQueries({ queryKey: ["is-liked"] })
-      queryClient.invalidateQueries({ queryKey: ["post"] })
+    onMutate: async (postId) => {
+      const parentId = findPost(queryClient, postId)?.parent
+      const snap = await snapshot(queryClient, [
+        postQueries,
+        { queryKey: ["reply-count", parentId] },
+      ])
+      updatePost(queryClient, postId, () => null)
+      if (parentId) {
+        queryClient.setQueryData<GetReplyCountResponse>(
+          ["reply-count", parentId],
+          (old) => old && { ...old, count: Math.max(0, old.count - 1) }
+        )
+      }
+      return { snap, parentId }
     },
-    onError: (error: AxiosError) => {
-      const message =
-        (error.response?.data as DeletePostResponse)?.message ||
-        "Delete Post failed!"
-      setMessage(message, "error")
+    onSuccess: (data) => setMessage(data.message, "success"),
+    onError: (error, _, context) => {
+      restore(queryClient, context?.snap)
+      setMessage(errorMessage(error, "Delete Post failed!"), "error")
     },
   })
-}
-
-interface EditPostResponse {
-  message: string
 }
 
 interface EditPostData {
@@ -123,19 +159,11 @@ interface EditPostData {
   video?: string
 }
 
-const editPost = async (
-  postId: string,
-  postData: EditPostData
-): Promise<EditPostResponse> => {
-  const { data } = await axios.patch<EditPostResponse>(
+const editPost = async (postId: string, postData: EditPostData) => {
+  const { data } = await axios.patch<MessageResponse>(
     config.backendUrl + `/post/edit-post/${postId}`,
     postData,
-    {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+    { withCredentials: true }
   )
   return data
 }
@@ -144,58 +172,49 @@ export const useEditPost = () => {
   const { setMessage } = useMessageStore()
   const queryClient = useQueryClient()
   return useMutation<
-    EditPostResponse,
+    MessageResponse,
     AxiosError,
-    { postId: string; postData: EditPostData }
+    { postId: string; postData: EditPostData },
+    { snap?: Snapshot; mediaChanged?: boolean }
   >({
     mutationFn: ({ postId, postData }) => editPost(postId, postData),
-    onSuccess: (data: EditPostResponse, variables) => {
-      setMessage(data.message, "success")
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["user-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["liked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["post", variables.postId] })
-      queryClient.invalidateQueries({ queryKey: ["bookmarked-posts"] })
-      queryClient.invalidateQueries({
-        queryKey: ["is-bookmarked", variables.postId],
-      })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked"] })
-      queryClient.invalidateQueries({
-        queryKey: ["reply-count", variables.postId],
-      })
-      queryClient.invalidateQueries({ queryKey: ["reply-count"] })
-      queryClient.invalidateQueries({ queryKey: ["replies", variables.postId] })
-      queryClient.invalidateQueries({ queryKey: ["replies"] })
-      queryClient.invalidateQueries({
-        queryKey: ["is-liked", variables.postId],
-      })
-      queryClient.invalidateQueries({ queryKey: ["is-liked"] })
+    onMutate: async ({ postId, postData }) => {
+      const snap = await snapshot(queryClient, [postQueries])
+      const before = findPost(queryClient, postId)
+      const now = new Date().toISOString()
+      updatePost(queryClient, postId, (post) => ({
+        ...post,
+        text: postData.text,
+        img: postData.img || undefined,
+        video: postData.video || undefined,
+        editedAt: now,
+      }))
+      const mediaChanged =
+        (postData.img || "") !== (before?.img || "") ||
+        (postData.video || "") !== (before?.video || "")
+      return { snap, mediaChanged }
     },
-    onError: (error: AxiosError) => {
-      const message =
-        (error.response?.data as EditPostResponse)?.message ||
-        "Edit Post failed!"
-      setMessage(message, "error")
+    onSuccess: (data) => setMessage(data.message, "success"),
+    onError: (error, _, context) => {
+      restore(queryClient, context?.snap)
+      setMessage(errorMessage(error, "Edit Post failed!"), "error")
+    },
+    onSettled: (_, __, { postId }, context) => {
+      // New media comes back as an uploaded URL; text-only edits are final.
+      if (context?.mediaChanged) {
+        queryClient.invalidateQueries(postQueries)
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["post", postId] })
+      }
     },
   })
 }
 
-interface LikeUnlikePostResponse {
-  message: string
-}
-
-const likeUnlikePost = async (
-  postId: string
-): Promise<LikeUnlikePostResponse> => {
-  const { data } = await axios.post<LikeUnlikePostResponse>(
+const likeUnlikePost = async (postId: string) => {
+  const { data } = await axios.post<MessageResponse>(
     config.backendUrl + `/post/like-post/${postId}`,
     {},
-    {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+    { withCredentials: true }
   )
   return data
 }
@@ -203,61 +222,39 @@ const likeUnlikePost = async (
 export const useLikeUnlikePost = () => {
   const { setMessage } = useMessageStore()
   const queryClient = useQueryClient()
-  return useMutation<LikeUnlikePostResponse, AxiosError, string>({
+  return useMutation<
+    MessageResponse,
+    AxiosError,
+    string,
+    { snap?: Snapshot; username?: string }
+  >({
     mutationFn: likeUnlikePost,
-    onSuccess: (_, postId) => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["post", postId] })
-      queryClient.invalidateQueries({ queryKey: ["is-liked", postId] })
-      queryClient.invalidateQueries({ queryKey: ["is-liked"] })
-      queryClient.invalidateQueries({ queryKey: ["user-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["liked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["bookmarked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked", postId] })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked"] })
-      queryClient.invalidateQueries({ queryKey: ["reply-count", postId] })
-      queryClient.invalidateQueries({ queryKey: ["reply-count"] })
-      queryClient.invalidateQueries({ queryKey: ["replies", postId] })
-      queryClient.invalidateQueries({ queryKey: ["replies"] })
+    onMutate: async (postId) => {
+      const me = getMe(queryClient)
+      if (!me) return {}
+      const snap = await snapshot(queryClient, [postQueries])
+      updatePost(queryClient, postId, (post) => ({
+        ...post,
+        likes: toggleId(post.likes, me._id, !post.likes.includes(me._id)),
+      }))
+      return { snap, username: me.username }
     },
-    onError: (error: AxiosError) => {
-      const message =
-        (error.response?.data as LikeUnlikePostResponse)?.message ||
-        "Like/Unlike Post failed!"
-      setMessage(message, "error")
+    onError: (error, _, context) => {
+      restore(queryClient, context?.snap)
+      setMessage(errorMessage(error, "Like/Unlike Post failed!"), "error")
+    },
+    onSettled: (_, __, ___, context) => {
+      // Your Likes tab picks this up next time it's opened.
+      queryClient.invalidateQueries({
+        queryKey: ["liked-posts", context?.username],
+        refetchType: "none",
+      })
     },
   })
 }
 
-interface IsLikedResponse {
-  message: string
-  liked: boolean
-}
-
-const isLiked = async (postId: string): Promise<IsLikedResponse> => {
-  const { data } = await axios.get<IsLikedResponse>(
-    config.backendUrl + `/post/is-liked/${postId}`,
-    { withCredentials: true }
-  )
-  return data
-}
-
-export const useIsLiked = (postId: string) => {
-  const isLoggedIn = useIsLoggedIn()
-  return useQuery<IsLikedResponse, AxiosError>({
-    queryKey: ["is-liked", postId],
-    queryFn: () => isLiked(postId),
-    enabled: isLoggedIn && !!postId,
-  })
-}
-
-interface GetPostByIdResponse {
-  message: string
-  post: Post
-}
-
-const getPostById = async (postId: string): Promise<GetPostByIdResponse> => {
-  const { data } = await axios.get<GetPostByIdResponse>(
+const getPostById = async (postId: string) => {
+  const { data } = await axios.get<{ message: string; post: Post }>(
     config.backendUrl + `/post/post/${postId}`,
     { withCredentials: true }
   )
@@ -265,65 +262,9 @@ const getPostById = async (postId: string): Promise<GetPostByIdResponse> => {
 }
 
 export const useGetPostById = (postId: string) => {
-  return useQuery<GetPostByIdResponse, AxiosError>({
+  return useQuery({
     queryKey: ["post", postId],
     queryFn: () => getPostById(postId),
-  })
-}
-
-interface CreateCommentData {
-  text?: string
-  img?: string
-  video?: string
-  user: string
-}
-interface CommentPostResponse {
-  message: string
-}
-
-const commentPost = async (
-  postId: string,
-  commentData: CreateCommentData
-): Promise<CommentPostResponse> => {
-  const { data } = await axios.post<CommentPostResponse>(
-    config.backendUrl + `/post/comment-post/${postId}`,
-    commentData,
-    { withCredentials: true }
-  )
-  return data
-}
-
-export const useCommentPost = () => {
-  const { setMessage } = useMessageStore()
-  const queryClient = useQueryClient()
-  return useMutation<
-    CommentPostResponse,
-    AxiosError,
-    { postId: string; commentData: CreateCommentData }
-  >({
-    mutationFn: ({ postId, commentData }) => commentPost(postId, commentData),
-    onSuccess: (data: CommentPostResponse, { postId }) => {
-      setMessage(data.message, "success")
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["post", postId] })
-      queryClient.invalidateQueries({ queryKey: ["user-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["liked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["bookmarked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked", postId] })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked"] })
-      queryClient.invalidateQueries({ queryKey: ["is-liked", postId] })
-      queryClient.invalidateQueries({ queryKey: ["is-liked"] })
-      queryClient.invalidateQueries({ queryKey: ["reply-count", postId] })
-      queryClient.invalidateQueries({ queryKey: ["reply-count"] })
-      queryClient.invalidateQueries({ queryKey: ["replies", postId] })
-      queryClient.invalidateQueries({ queryKey: ["replies"] })
-    },
-    onError: (error: AxiosError) => {
-      const message =
-        (error.response?.data as CommentPostResponse)?.message ||
-        "Comment Post failed!"
-      setMessage(message, "error")
-    },
   })
 }
 
@@ -345,12 +286,8 @@ export const useGetLikedPosts = (username: string) => {
   })
 }
 
-interface BookmarkPostResponse {
-  message: string
-}
-
-const bookmarkPost = async (postId: string): Promise<BookmarkPostResponse> => {
-  const { data } = await axios.post<BookmarkPostResponse>(
+const bookmarkPost = async (postId: string) => {
+  const { data } = await axios.post<MessageResponse>(
     config.backendUrl + `/post/bookmark-post/${postId}`,
     {},
     { withCredentials: true }
@@ -361,54 +298,63 @@ const bookmarkPost = async (postId: string): Promise<BookmarkPostResponse> => {
 export const useBookmarkPost = () => {
   const { setMessage } = useMessageStore()
   const queryClient = useQueryClient()
-  return useMutation<BookmarkPostResponse, AxiosError, string>({
-    mutationFn: bookmarkPost,
-    onSuccess: (data: BookmarkPostResponse, postId) => {
-      setMessage(data.message, "success")
-      queryClient.invalidateQueries({ queryKey: ["me"] })
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["post", postId] })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked", postId] })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked"] })
-      queryClient.invalidateQueries({ queryKey: ["user-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["liked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["bookmarked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["is-liked", postId] })
-      queryClient.invalidateQueries({ queryKey: ["is-liked"] })
-      queryClient.invalidateQueries({ queryKey: ["reply-count", postId] })
-      queryClient.invalidateQueries({ queryKey: ["reply-count"] })
-      queryClient.invalidateQueries({ queryKey: ["replies", postId] })
-      queryClient.invalidateQueries({ queryKey: ["replies"] })
-    },
-    onError: (error: AxiosError) => {
-      const message =
-        (error.response?.data as BookmarkPostResponse)?.message ||
-        "Bookmark Post failed!"
-      setMessage(message, "error")
-    },
-  })
-}
-
-interface IsBookmarkedResponse {
-  message: string
-  isBookmarked: boolean
-}
-
-const isBookmarked = async (postId: string): Promise<IsBookmarkedResponse> => {
-  const { data } = await axios.get<IsBookmarkedResponse>(
-    config.backendUrl + `/post/is-bookmarked/${postId}`,
-    { withCredentials: true }
+  return useMutation<MessageResponse, AxiosError, string, { snap?: Snapshot }>(
+    {
+      mutationFn: bookmarkPost,
+      onMutate: async (postId) => {
+        const me = getMe(queryClient)
+        if (!me) return {}
+        const snap = await snapshot(queryClient, [
+          postQueries,
+          { queryKey: ["me"] },
+        ])
+        const post = findPost(queryClient, postId)
+        const bookmarking = !post?.bookmarks.includes(me._id)
+        updatePost(queryClient, postId, (p) => ({
+          ...p,
+          bookmarks: toggleId(p.bookmarks, me._id, bookmarking),
+        }))
+        updateMe(queryClient, (user) => ({
+          ...user,
+          bookmarks: toggleId(user.bookmarks, postId, bookmarking),
+        }))
+        if (!bookmarking) {
+          // Drop it from the Bookmarks page right away.
+          queryClient.setQueriesData(
+            { queryKey: ["bookmarked-posts"] },
+            (data: unknown) =>
+              data &&
+              typeof data === "object" &&
+              "pages" in data &&
+              Array.isArray(data.pages)
+                ? {
+                    ...data,
+                    pages: data.pages.map((page: { posts: Post[] }) => ({
+                      ...page,
+                      posts: page.posts.filter((p) => p._id !== postId),
+                    })),
+                  }
+                : data
+          )
+        }
+        setMessage(
+          bookmarking ? "Added to your bookmarks" : "Removed from bookmarks",
+          "success"
+        )
+        return { snap }
+      },
+      onError: (error, _, context) => {
+        restore(queryClient, context?.snap)
+        setMessage(errorMessage(error, "Bookmark Post failed!"), "error")
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["bookmarked-posts"],
+          refetchType: "none",
+        })
+      },
+    }
   )
-  return data
-}
-
-export const useIsBookmarked = (postId: string) => {
-  const isLoggedIn = useIsLoggedIn()
-  return useQuery<IsBookmarkedResponse, AxiosError>({
-    queryKey: ["is-bookmarked", postId],
-    queryFn: () => isBookmarked(postId),
-    enabled: isLoggedIn && !!postId,
-  })
 }
 
 export const useGetBookmarkedPosts = () => {
@@ -423,45 +369,39 @@ export const useCreateReply = () => {
   const { setMessage } = useMessageStore()
   const queryClient = useQueryClient()
   return useMutation<
-    CreatePostResponse,
+    MessageResponse,
     AxiosError,
-    { postData: CreatePostData; parentId: string }
+    { postData: CreatePostData; parentId: string },
+    { snap?: Snapshot }
   >({
-    mutationFn: ({ postData, parentId }) => {
-      return createPost({
-        ...postData,
-        parentId,
-      })
+    mutationFn: ({ postData, parentId }) =>
+      createPost({ ...postData, parentId }),
+    onMutate: async ({ postData, parentId }) => {
+      const me = getMe(queryClient)
+      if (!me) return {}
+      const snap = await snapshot(queryClient, [
+        { queryKey: ["replies", parentId] },
+        { queryKey: ["reply-count", parentId] },
+      ])
+      prependToList(
+        queryClient,
+        ["replies", parentId],
+        "replies",
+        buildOptimisticPost(me, { ...postData, parentId })
+      )
+      queryClient.setQueryData<GetReplyCountResponse>(
+        ["reply-count", parentId],
+        (old) => old && { ...old, count: old.count + 1 }
+      )
+      return { snap }
     },
-    onSuccess: (data: CreatePostResponse, variables) => {
-      setMessage(data.message, "success")
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["post", variables.parentId] })
-      queryClient.invalidateQueries({
-        queryKey: ["replies", variables.parentId],
-      })
-      queryClient.invalidateQueries({ queryKey: ["replies"] })
-      queryClient.invalidateQueries({ queryKey: ["user-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["liked-posts"] })
-      queryClient.invalidateQueries({ queryKey: ["bookmarked-posts"] })
-      queryClient.invalidateQueries({
-        queryKey: ["is-bookmarked", variables.parentId],
-      })
-      queryClient.invalidateQueries({ queryKey: ["is-bookmarked"] })
-      queryClient.invalidateQueries({
-        queryKey: ["is-liked", variables.parentId],
-      })
-      queryClient.invalidateQueries({ queryKey: ["is-liked"] })
-      queryClient.invalidateQueries({
-        queryKey: ["reply-count", variables.parentId],
-      })
-      queryClient.invalidateQueries({ queryKey: ["reply-count"] })
+    onError: (error, _, context) => {
+      restore(queryClient, context?.snap)
+      setMessage(errorMessage(error, "Failed to create reply!"), "error")
     },
-    onError: (error: AxiosError) => {
-      const message =
-        (error.response?.data as CreatePostResponse)?.message ||
-        "Failed to create reply!"
-      setMessage(message, "error")
+    onSettled: (_, __, { parentId }) => {
+      queryClient.invalidateQueries({ queryKey: ["replies", parentId] })
+      queryClient.invalidateQueries({ queryKey: ["reply-count", parentId] })
     },
   })
 }
@@ -475,15 +415,12 @@ export const useGetReplies = (postId: string) => {
   })
 }
 
-// Add a function to get the number of replies for a post
 interface GetReplyCountResponse {
   message: string
   count: number
 }
 
-const getReplyCount = async (
-  postId: string
-): Promise<GetReplyCountResponse> => {
+const getReplyCount = async (postId: string) => {
   const { data } = await axios.get<GetReplyCountResponse>(
     config.backendUrl + `/post/reply-count/${postId}`,
     { withCredentials: true }
@@ -495,7 +432,7 @@ export const useGetReplyCount = (postId: string) => {
   return useQuery<GetReplyCountResponse, AxiosError>({
     queryKey: ["reply-count", postId],
     queryFn: () => getReplyCount(postId),
-    enabled: !!postId,
+    enabled: !!postId && !isOptimisticId(postId),
   })
 }
 
@@ -504,9 +441,7 @@ interface GetParentThreadResponse {
   thread: Post[]
 }
 
-const getParentThread = async (
-  postId: string
-): Promise<GetParentThreadResponse> => {
+const getParentThread = async (postId: string) => {
   const { data } = await axios.get<GetParentThreadResponse>(
     config.backendUrl + `/post/parent-thread/${postId}`,
     { withCredentials: true }

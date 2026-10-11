@@ -11,17 +11,16 @@ import { useGetMe } from "@/hooks/useAuth"
 import {
   useBookmarkPost,
   useDeletePost,
-  useIsBookmarked,
-  useIsLiked,
   useLikeUnlikePost,
   useGetReplyCount,
 } from "@/hooks/usePost"
-import { Loader2, X } from "lucide-react"
+import { X } from "lucide-react"
 import config from "@/config/config"
 import useMessageStore from "@/store/messageStore"
 import { useRouter } from "next/navigation"
 import EditPost from "./EditPost"
-import { useFollowUnfollowUser, useIsFollowing } from "@/hooks/useUser"
+import { useFollowUnfollowUser } from "@/hooks/useUser"
+import { isOptimisticId } from "@/lib/queryCache"
 import CuezBadge from "./CuezBadge"
 import LazyVideo from "../LazyVideo"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
@@ -41,24 +40,19 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   const postRef = useRef<HTMLElement>(null)
   const { data: authUser } = useGetMe()
   const { requireAuth } = useRequireAuth()
-  const { mutate: deletePost, isPending } = useDeletePost()
-  const { mutate: likeUnlikePost, isPending: isLikeUnlikePending } =
-    useLikeUnlikePost()
-  const { mutate: bookmarkPost, isPending: isBookmarkPending } =
-    useBookmarkPost()
-  const { data: isBookmarked, isLoading: isBookmarkedPending } =
-    useIsBookmarked(post._id)
-  const { data: isLiked, isLoading: isLikedPending } = useIsLiked(post._id)
+  const { mutate: deletePost } = useDeletePost()
+  const { mutate: likeUnlikePost } = useLikeUnlikePost()
+  const { mutate: bookmarkPost } = useBookmarkPost()
   const { data: replyCount } = useGetReplyCount(post._id)
-  const { data: isFollowing, isLoading: isFollowingPending } = useIsFollowing(
-    post?.user?._id || ""
-  )
-  const {
-    mutate: followUnfollowUser,
-    isPending: isFollowUnfollowPending,
-    isError: isFollowUnfollowError,
-  } = useFollowUnfollowUser()
-  const isOwner = authUser?.user._id === post?.user?._id
+  const { mutate: followUnfollowUser } = useFollowUnfollowUser()
+  // Derived from cached data so optimistic updates show instantly.
+  const meId = authUser?.user._id
+  const isOwner = !!meId && meId === post?.user?._id
+  const isLiked = !!meId && post.likes.includes(meId)
+  const isBookmarked = !!meId && post.bookmarks.includes(meId)
+  const isFollowing =
+    !!post?.user?._id && !!authUser?.user.followings.includes(post.user._id)
+  const isOptimistic = isOptimisticId(post._id)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -85,15 +79,9 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   }, [showWarning])
 
   const handleDeletePost = () => {
-    deletePost(post._id, {
-      onSuccess: () => {
-        setIsOpen(false)
-        setShowWarning(false)
-      },
-      onError: () => {
-        setShowWarning(false)
-      },
-    })
+    setIsOpen(false)
+    setShowWarning(false)
+    deletePost(post._id)
   }
 
   const handleLikeUnlikePost = () => {
@@ -149,7 +137,9 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
       ref={postRef}
       className={`flex relative flex-col gap-3 border-b border-zinc-700 hover:bg-zinc-900 transition-all duration-200 cursor-pointer p-4 ${
         inThread ? "thread-post" : ""
-      } ${inThread ? "has-connector" : ""}`}
+      } ${inThread ? "has-connector" : ""} ${
+        isOptimistic ? "opacity-60 pointer-events-none" : ""
+      }`}
     >
       <div className="flex gap-2 w-full">
         <Image
@@ -191,25 +181,19 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                   </div>
 
                   {!isOwner &&
-                    (isFollowingPending ? (
-                      <div className="text-sm text-zinc-400">...</div>
-                    ) : isFollowing?.isFollowing ? (
+                    post?.user?._id &&
+                    (isFollowing ? (
                       <div className="text-xs text-zinc-400">Following</div>
                     ) : (
                       <div
                         onClick={() =>
-                          requireAuth("follow", () => followUnfollowUser(post.user._id))
+                          requireAuth("follow", () =>
+                            followUnfollowUser(post.user._id)
+                          )
                         }
+                        className="text-xs font-semibold text-blue-500 hover:underline cursor-pointer"
                       >
-                        {isFollowUnfollowPending && (
-                          <div className="text-sm text-zinc-400">...</div>
-                        )}
-                        {isFollowUnfollowError && ""}
-                        {!isFollowUnfollowPending && !isFollowUnfollowError && (
-                          <div className="text-xs font-semibold text-blue-500 hover:underline cursor-pointer">
-                            Follow
-                          </div>
-                        )}
+                        Follow
                       </div>
                     ))}
                 </div>
@@ -325,15 +309,15 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                   onClick={handleLikeUnlikePost}
                   className="flex items-center gap-1 p-1.5 hover:bg-pink-500/30 group/like rounded-lg transition-all duration-200"
                 >
-                  {isLikeUnlikePending || isLikedPending ? (
-                    <Loader2 className="animate-spin size-[18px]" />
-                  ) : isLiked?.liked ? (
+                  {isLiked ? (
                     <BiSolidUpvote className="group-hover/like:-translate-y-0.5 text-pink-500 transition-all duration-300" />
                   ) : (
                     <BiUpvote className="group-hover/like:-translate-y-0.5 transition-all duration-300" />
                   )}
                 </button>
-                <span className="text-sm">{post?.likes.length}</span>
+                <span className={`text-sm ${isLiked ? "text-pink-500" : ""}`}>
+                  {post?.likes.length}
+                </span>
               </div>
             </div>
             <div
@@ -347,9 +331,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                 }}
                 className="p-1.5 hover:bg-blue-500/30 rounded-lg transition-all duration-200"
               >
-                {isBookmarkPending || isBookmarkedPending ? (
-                  <Loader2 className="animate-spin size-[18px]" />
-                ) : isBookmarked?.isBookmarked ? (
+                {isBookmarked ? (
                   <IoBookmark className="text-blue-500" />
                 ) : (
                   <IoBookmarkOutline />
@@ -404,17 +386,9 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                   e.stopPropagation()
                   handleDeletePost()
                 }}
-                disabled={isPending}
                 className="py-2 px-4 rounded-lg bg-red-500 hover:bg-red-600 transition-all duration-200 text-white"
               >
-                {isPending ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="size-5 animate-spin" />
-                    <span>Deleting</span>
-                  </div>
-                ) : (
-                  "Delete"
-                )}
+                Delete
               </button>
             </div>
           </div>
