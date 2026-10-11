@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { AnimatePresence, motion } from "framer-motion"
 import { Loader2, X } from "lucide-react"
-import Image from "next/image"
+import SafeImage, { ImageKind } from "./SafeImage"
 
 // Full-screen image viewer, like X: dark backdrop, image fit to the screen,
 // close with the button, a backdrop click or Escape.
@@ -12,9 +12,11 @@ const MediaLightbox = ({
   alt,
   open,
   onClose,
+  kind = "post",
 }: {
   src: string
   alt: string
+  kind?: ImageKind
   open: boolean
   onClose: () => void
 }) => {
@@ -71,7 +73,8 @@ const MediaLightbox = ({
             transition={{ duration: 0.15 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
+            <SafeImage
+              kind={kind}
               src={src}
               alt={alt}
               // Original file: shown at its real size (no upscaling of small

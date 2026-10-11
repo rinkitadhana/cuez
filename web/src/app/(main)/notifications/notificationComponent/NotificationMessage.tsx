@@ -1,6 +1,6 @@
 "use client"
 import { Notification } from "@/types/Notification"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import { MdDeleteOutline } from "react-icons/md"
 import { useDeleteNotification } from "@/hooks/useNotification"
 import { Loader2 } from "lucide-react"
@@ -139,7 +139,8 @@ const NotificationMessage = ({
         }}
         className="relative shrink-0 mr-3 sm:mr-4"
       >
-        <Image
+        <SafeImage
+          kind="avatar"
           src={notification?.from?.profileImg || "/img/pfp/default.webp"}
           alt={`${notification?.from?.fullName}'s profile picture`}
           width={48}

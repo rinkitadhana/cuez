@@ -1,5 +1,5 @@
 "use client"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import { BiCommentDetail, BiSolidUpvote, BiUpvote } from "react-icons/bi"
 import { HiArrowPathRoundedSquare } from "react-icons/hi2"
 import { IoBookmark, IoBookmarkOutline } from "react-icons/io5"
@@ -141,7 +141,8 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
       }`}
     >
       <div className="flex gap-2 w-full">
-        <Image
+        <SafeImage
+          kind="avatar"
           onClick={(e) => {
             e.stopPropagation()
             userProfile()
@@ -372,7 +373,6 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
           </div>
         </div>
       )}
-
     </section>
   )
 }

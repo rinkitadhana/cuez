@@ -1,7 +1,7 @@
 "use client"
 import { useGetMe, useLogout } from "@/hooks/useAuth"
 import useMenuStore from "@/store/MenuStrore"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import React from "react"
 import CuezBadge from "../components/pageComponents/CuezBadge"
 import { useRouter } from "next/navigation"
@@ -38,7 +38,8 @@ const MobileMenu = () => {
         className="flex flex-col w-[70%] h-full p-4 border-r border-zinc-700  bg-bgClr z-[999]   "
       >
         <div className=" flex flex-col gap-2">
-          <Image
+          <SafeImage
+            kind="avatar"
             onClick={userProfile}
             src={data?.user?.profileImg || "/img/pfp/default.webp"}
             alt="user"

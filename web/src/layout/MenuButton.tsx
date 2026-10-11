@@ -1,6 +1,6 @@
 import { useGetMe } from "@/hooks/useAuth"
 import useMenuStore from "@/store/MenuStrore"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import React from "react"
 import Link from "next/link"
 
@@ -21,7 +21,8 @@ const MenuButton = () => {
 
   return (
     <div onClick={() => setOpen(true)} className="md:hidden block">
-      <Image
+      <SafeImage
+        kind="avatar"
         src={data?.user?.profileImg || "/img/pfp/default.webp"}
         alt="menu"
         width={24}

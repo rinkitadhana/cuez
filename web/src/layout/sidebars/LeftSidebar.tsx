@@ -2,6 +2,7 @@
 
 import CreatePost from "@/components/pageComponents/CreatePost"
 import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import React, { useState, useEffect, useRef } from "react"
@@ -206,8 +207,9 @@ const LeftSidebar = () => {
               ${isOpen ? "bg-zinc-800 ml-0" : "hover:ml-0 hover:bg-zinc-800"}`}
             >
               <div className="flex items-center gap-2">
-                <Image
-                  src={me?.user.profileImg || "/img/pfp/Gruz.jpeg"}
+                <SafeImage
+                  kind="avatar"
+                  src={me?.user.profileImg}
                   alt="Profile picture"
                   width={36}
                   height={36}

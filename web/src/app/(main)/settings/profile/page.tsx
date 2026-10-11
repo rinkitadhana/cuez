@@ -3,7 +3,7 @@
 import { useState, useRef, ChangeEvent, useEffect } from "react"
 import { useGetMe } from "@/hooks/useAuth"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import { ArrowLeft, Camera, Loader2 } from "lucide-react"
 import MainWrapper from "@/layout/MainWrapper"
 import { useUpdateUserProfile } from "@/hooks/useUser"
@@ -128,7 +128,8 @@ const ProfilePage = () => {
 
         <div className="relative mb-[80px] select-none">
           <div className="relative h-[200px] w-full">
-            <Image
+            <SafeImage
+              kind="cover"
               src={
                 coverImgPreview ||
                 authUser?.user?.coverImg ||
@@ -155,7 +156,8 @@ const ProfilePage = () => {
 
           <div className="absolute -bottom-[60px] left-5">
             <div className="relative h-[120px] w-[120px]">
-              <Image
+              <SafeImage
+                kind="avatar"
                 src={
                   profileImgPreview ||
                   authUser?.user?.profileImg ||

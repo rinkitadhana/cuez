@@ -1,6 +1,6 @@
 "use client"
 import { ImagePlus, LoaderCircle, SmilePlus, X } from "lucide-react"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import { useState, useRef, useEffect } from "react"
 import { MdOutlineVideoCameraBack } from "react-icons/md"
 import EmojiPicker from "emoji-picker-react"
@@ -163,7 +163,8 @@ const CreatePost = () => {
       <div className="bg-bgClr border-b border-zinc-700 w-full max-w-[600px] p-4 h-fit">
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div className="flex justify-between items-center sticky top-0 bg-bgClr z-10 py-2">
-            <Image
+            <SafeImage
+              kind="avatar"
               src={authUser?.user.profileImg || "/img/pfp/default.webp"}
               alt="profile"
               width={32}
@@ -210,7 +211,8 @@ const CreatePost = () => {
                   <div className="relative w-full">
                     <div className="relative">
                       {formData.img ? (
-                        <Image
+                        <SafeImage
+                          kind="post"
                           src={formData.img}
                           alt="Selected image"
                           className="w-full h-auto max-h-[400px] object-contain rounded-2xl border border-zinc-800 bg-zinc-900"

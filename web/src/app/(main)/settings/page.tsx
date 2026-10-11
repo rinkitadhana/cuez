@@ -3,7 +3,7 @@ import MainWrapper from "@/layout/MainWrapper"
 import PageHead from "../../../components/pageComponents/PageHead"
 import Header from "./settingComponent/Header"
 import { useGetMe, useLogout } from "@/hooks/useAuth"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import {
   AtSign,
   ChevronRight,
@@ -59,7 +59,8 @@ const SettingsPage = () => {
           <Loader2 className="size-10 animate-spin" />
         ) : (
           <div className=" flex flex-col items-center gap-1.5">
-            <Image
+            <SafeImage
+              kind="avatar"
               src={data?.user.profileImg || ""}
               alt="profile"
               width={100}

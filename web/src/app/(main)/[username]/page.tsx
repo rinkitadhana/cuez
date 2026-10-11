@@ -2,6 +2,7 @@
 import MainWrapper from "@/layout/MainWrapper"
 import Header from "./profileComponent/Header"
 import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import { Calendar, Link, MapPin } from "lucide-react"
 import { useFollowUnfollowUser, useGetUserProfile } from "@/hooks/useUser"
 import { useParams } from "next/navigation"
@@ -64,7 +65,8 @@ const UserProfile = () => {
         ) : (
           <>
             <div className="rounded-xl relative mb-[60px] select-none">
-              <Image
+              <SafeImage
+                kind="cover"
                 src={user?.coverImg || ""}
                 className="w-full h-[160px] md:h-[200px] object-cover bg-white cursor-pointer hover:brightness-90 transition-all duration-200"
                 alt="profile"
@@ -74,7 +76,8 @@ const UserProfile = () => {
                 priority
                 onClick={() => setIsCoverImageModalOpen(true)}
               />
-              <Image
+              <SafeImage
+                kind="avatar"
                 src={user?.profileImg || ""}
                 className="absolute -bottom-[60px] bg-white left-5 size-[120px] object-cover rounded-xl border-4 border-bgClr cursor-pointer hover:brightness-90 transition-all duration-200"
                 alt="profile"
@@ -205,12 +208,14 @@ const UserProfile = () => {
       <MediaLightbox
         src={user?.profileImg || ""}
         alt="Profile image"
+        kind="avatar"
         open={isImageModalOpen && !!user?.profileImg}
         onClose={() => setIsImageModalOpen(false)}
       />
       <MediaLightbox
         src={user?.coverImg || ""}
         alt="Cover image"
+        kind="cover"
         open={isCoverImageModalOpen && !!user?.coverImg}
         onClose={() => setIsCoverImageModalOpen(false)}
       />

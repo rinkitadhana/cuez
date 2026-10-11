@@ -1,5 +1,5 @@
 import { useFollowUnfollowUser } from "@/hooks/useUser"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import React from "react"
 import { User } from "@/types/User"
 import { useGetMe } from "@/hooks/useAuth"
@@ -23,7 +23,8 @@ const UserInfo = ({ user }: { user: User }) => {
   return (
     <div className="flex w-full items-center justify-between">
       <div className="flex items-center gap-2 truncate">
-        <Image
+        <SafeImage
+          kind="avatar"
           src={user?.profileImg || "/img/pfp/default.webp"}
           alt={user?.username || "default"}
           width={50}

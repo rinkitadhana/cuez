@@ -1,7 +1,7 @@
 "use client"
 
 import { Search, X } from "lucide-react"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -94,7 +94,8 @@ export const SearchBox = ({
               onClick={() => goToProfile(user.username)}
               className="flex w-full items-center gap-3 px-4 py-2.5 text-left border-t border-zinc-800 hover:bg-zinc-800 transition-colors duration-150"
             >
-              <Image
+              <SafeImage
+                kind="avatar"
                 src={user.profileImg || "/img/pfp/default.webp"}
                 alt={user.username}
                 width={36}

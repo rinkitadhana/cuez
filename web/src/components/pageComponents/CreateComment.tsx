@@ -1,6 +1,6 @@
 import { ImagePlus, Loader2, SmilePlus, X } from "lucide-react"
 import React, { useState, useRef, useEffect } from "react"
-import Image from "next/image"
+import SafeImage from "@/components/media/SafeImage"
 import { useGetMe } from "@/hooks/useAuth"
 import { MdOutlineVideoCameraBack } from "react-icons/md"
 import EmojiPickerPortal from "./EmojiPickerPortal"
@@ -192,7 +192,9 @@ const CreateComment = ({ commentActive }: { commentActive: boolean }) => {
   if (!isLoggedIn) {
     return (
       <div className="flex items-center justify-between gap-3 p-4 border-y bg-zinc-800/20 border-zinc-700 w-full">
-        <p className="text-sm text-zinc-400">Log in to join the conversation.</p>
+        <p className="text-sm text-zinc-400">
+          Log in to join the conversation.
+        </p>
         <button
           onClick={() => requireAuth("comment")}
           className="px-4 py-1.5 rounded-xl bg-mainclr text-white text-sm font-semibold hover:bg-mainclr/80 transition-all duration-200"
@@ -206,7 +208,8 @@ const CreateComment = ({ commentActive }: { commentActive: boolean }) => {
   return (
     <div className="flex flex-col items-start gap-5 p-4 border-y bg-zinc-800/20 border-zinc-700 w-full">
       <div className="flex items-center justify-between w-full">
-        <Image
+        <SafeImage
+          kind="avatar"
           src={authUser?.user.profileImg || ""}
           alt="user avatar"
           width={32}
@@ -242,7 +245,8 @@ const CreateComment = ({ commentActive }: { commentActive: boolean }) => {
                   >
                     <X className="size-5" />
                   </button>
-                  <Image
+                  <SafeImage
+                    kind="post"
                     src={formData.img}
                     alt="Selected image"
                     width={0}
