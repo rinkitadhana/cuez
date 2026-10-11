@@ -319,39 +319,33 @@ const LeftSidebar = () => {
           </div>
         </div>
         <div className="flex gap-1 items-center text-xs text-zinc-400">
-          <a
-            href="https://x.com/damnGruz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer hover:underline hover:text-zinc-100 transition-opacity duration-200"
-          >
-            Support
-          </a>
-          {" • "}
-          <a
-            href="mailto:therinkit@gmail.com"
-            className="cursor-pointer hover:underline hover:text-zinc-100 transition-opacity duration-200"
-          >
-            Help
-          </a>
-          {" • "}
-          <a
-            href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer hover:underline hover:text-zinc-100 transition-opacity duration-200"
-          >
-            Legal
-          </a>
-          {" • "}
-          <a
-            href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer hover:underline hover:text-zinc-100 transition-opacity duration-200"
-          >
-            Terms
-          </a>
+          {[
+            { label: "Contact", href: "https://x.com/damnGruz" },
+            {
+              label: "Help",
+              href: "https://www.youtube.com/watch?v=QDia3e12czc",
+            },
+            {
+              label: "Legal",
+              href: "https://www.youtube.com/watch?v=QDia3e12czc",
+            },
+            {
+              label: "Terms",
+              href: "https://www.youtube.com/watch?v=QDia3e12czc",
+            },
+          ].map((item, i) => (
+            <span key={item.label} className="flex gap-1 items-center">
+              {i > 0 && " • "}
+              <a
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer hover:underline hover:text-zinc-100 transition-opacity duration-200"
+              >
+                {item.label}
+              </a>
+            </span>
+          ))}
         </div>
         <p className="text-xs text-zinc-300 mt-0.5">
           © Cuez 2025, All rights reserved.
