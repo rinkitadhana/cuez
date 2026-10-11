@@ -1,5 +1,4 @@
 "use client"
-import MainWrapper from "@/layout/MainWrapper"
 import Header from "./profileComponent/Header"
 import Image from "next/image"
 import SafeImage from "@/components/media/SafeImage"
@@ -59,7 +58,7 @@ const UserProfile = () => {
   }
 
   return (
-    <MainWrapper>
+    <>
       <PageHead
         title={
           user
@@ -261,7 +260,7 @@ const UserProfile = () => {
           onClose={() => setIsUsersListOpen(false)}
         />
       )}
-    </MainWrapper>
+    </>
   )
 }
 

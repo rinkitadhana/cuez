@@ -1,7 +1,6 @@
 "use client"
 import { MessageSquarePlus } from "lucide-react"
 import { Suspense, useState } from "react"
-import MainWrapper from "@/layout/MainWrapper"
 import PageHead from "@/components/pageComponents/PageHead"
 import ConversationList from "./ConversationList"
 import ChatThread from "./ChatThread"
@@ -12,7 +11,7 @@ import NewMessageModal from "./NewMessageModal"
 const ChatLayout = ({ conversationId }: { conversationId: string | null }) => {
   const [isNewOpen, setIsNewOpen] = useState(false)
   return (
-    <MainWrapper wide hideMobileNav={!!conversationId}>
+    <>
       <PageHead title="Messages / Cuez" />
       <div className="flex h-full min-h-0">
         <div
@@ -29,7 +28,10 @@ const ChatLayout = ({ conversationId }: { conversationId: string | null }) => {
         >
           {conversationId ? (
             <Suspense>
-              <ChatThread key={conversationId} conversationId={conversationId} />
+              <ChatThread
+                key={conversationId}
+                conversationId={conversationId}
+              />
             </Suspense>
           ) : (
             <div className="flex flex-col items-start justify-center h-full max-w-sm mx-auto gap-2 px-8">
@@ -49,7 +51,7 @@ const ChatLayout = ({ conversationId }: { conversationId: string | null }) => {
         </div>
       </div>
       <NewMessageModal open={isNewOpen} onClose={() => setIsNewOpen(false)} />
-    </MainWrapper>
+    </>
   )
 }
 

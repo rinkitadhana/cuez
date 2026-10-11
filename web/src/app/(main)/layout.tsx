@@ -1,6 +1,7 @@
 "use client"
 
 import AuthGuard from "@/components/AuthGuard"
+import AppShell from "@/layout/AppShell"
 
 export default function MainLayout({
   children,
@@ -9,7 +10,7 @@ export default function MainLayout({
 }>) {
   return (
     <AuthGuard>
-      {children}
+      <AppShell>{children}</AppShell>
     </AuthGuard>
   )
-} 
+}

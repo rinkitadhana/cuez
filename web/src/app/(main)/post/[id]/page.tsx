@@ -19,7 +19,6 @@ import config from "@/config/config"
 import useMessageStore from "@/store/messageStore"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useParams } from "next/navigation"
-import MainWrapper from "@/layout/MainWrapper"
 import Header from "../postComponents/Header"
 import NoPost from "@/components/notAvailable/NoPost"
 import CreateComment from "@/components/pageComponents/CreateComment"
@@ -163,13 +162,13 @@ const PostPage = () => {
 
   if (isPostPending) {
     return (
-      <MainWrapper>
+      <>
         <Header title="Post" />
         <PostSkeleton />
         <PostWithoutImage />
         <PostWithoutImage />
         <PostWithoutImage />
-      </MainWrapper>
+      </>
     )
   }
   const formatDateTime = (date: Date) => {
@@ -185,7 +184,7 @@ const PostPage = () => {
   const isOwner = !!meId && meId === authorId
 
   return (
-    <MainWrapper>
+    <>
       <PageHead
         title={
           post?.post
@@ -425,7 +424,7 @@ const PostPage = () => {
       ) : (
         <NoPost />
       )}
-    </MainWrapper>
+    </>
   )
 }
 

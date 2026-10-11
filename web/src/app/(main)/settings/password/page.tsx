@@ -9,7 +9,6 @@ import {
   LoaderCircle,
   Shield,
 } from "lucide-react"
-import MainWrapper from "@/layout/MainWrapper"
 import Header from "../settingComponent/Header"
 import { useUpdateUserProfile } from "@/hooks/useUser"
 import Input from "@/components/Input"
@@ -74,7 +73,7 @@ const PasswordPage = () => {
   }
 
   return (
-    <MainWrapper>
+    <>
       <PageHead title="Password / Cuez" />
       <Header title="Password" />
 
@@ -164,7 +163,7 @@ const PasswordPage = () => {
           </ul>
         </div>
       </div>
-    </MainWrapper>
+    </>
   )
 }
 

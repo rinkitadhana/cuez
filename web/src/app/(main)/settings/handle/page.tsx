@@ -6,7 +6,6 @@ import config from "@/config/config"
 import { useGoBack } from "@/hooks/useGoBack"
 import { useRouter } from "next/navigation"
 import { AtSign, Check, Info, LoaderCircle, UserRound } from "lucide-react"
-import MainWrapper from "@/layout/MainWrapper"
 import Header from "../settingComponent/Header"
 import { useGetMe } from "@/hooks/useAuth"
 import { useUpdateUserProfile } from "@/hooks/useUser"
@@ -102,7 +101,7 @@ const HandlePage = () => {
   }
 
   return (
-    <MainWrapper>
+    <>
       <PageHead title="Username / Cuez" />
       <Header title="Username" />
 
@@ -197,7 +196,7 @@ const HandlePage = () => {
           </div>
         </div>
       </div>
-    </MainWrapper>
+    </>
   )
 }
 

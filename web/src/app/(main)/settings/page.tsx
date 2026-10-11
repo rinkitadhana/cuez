@@ -1,5 +1,4 @@
 "use client"
-import MainWrapper from "@/layout/MainWrapper"
 import PageHead from "../../../components/pageComponents/PageHead"
 import Header from "./settingComponent/Header"
 import { useGetMe, useLogout } from "@/hooks/useAuth"
@@ -51,7 +50,7 @@ const SettingsPage = () => {
     },
   ]
   return (
-    <MainWrapper>
+    <>
       <PageHead title="Settings / Cuez" />
       <Header title="Settings" />
       <div className="flex items-center justify-center py-8 border-b border-zinc-700">
@@ -96,7 +95,7 @@ const SettingsPage = () => {
       >
         <LuLogOut className="size-5" /> Logout
       </div>
-    </MainWrapper>
+    </>
   )
 }
 

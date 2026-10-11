@@ -2,7 +2,6 @@
 import { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search, SearchX, X } from "lucide-react"
-import MainWrapper from "@/layout/MainWrapper"
 import MenuButton from "@/layout/MenuButton"
 import PageHead from "@/components/pageComponents/PageHead"
 import PostStructure from "@/components/pageComponents/PostStructure"
@@ -205,11 +204,11 @@ const SearchPage = () => {
 }
 
 const Page = () => (
-  <MainWrapper>
+  <>
     <Suspense>
       <SearchPage />
     </Suspense>
-  </MainWrapper>
+  </>
 )
 
 export default Page

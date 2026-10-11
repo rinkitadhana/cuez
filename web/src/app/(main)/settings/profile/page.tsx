@@ -6,7 +6,6 @@ import { useGetMe } from "@/hooks/useAuth"
 import { useRouter } from "next/navigation"
 import SafeImage from "@/components/media/SafeImage"
 import { ArrowLeft, Camera, Loader2 } from "lucide-react"
-import MainWrapper from "@/layout/MainWrapper"
 import { useUpdateUserProfile } from "@/hooks/useUser"
 import PageHead from "@/components/pageComponents/PageHead"
 
@@ -93,16 +92,16 @@ const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <MainWrapper>
+      <>
         <div className="flex h-full items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-mainclr border-t-transparent"></div>
         </div>
-      </MainWrapper>
+      </>
     )
   }
 
   return (
-    <MainWrapper>
+    <>
       <PageHead title="Edit Profile / Cuez" />
       <div className="flex flex-col min-h-screen">
         <div className="flex sticky top-0 z-50 bg-bgClr items-center justify-between border-b border-zinc-700 px-4 h-[60px]">
@@ -255,7 +254,7 @@ const ProfilePage = () => {
           </div>
         </form>
       </div>
-    </MainWrapper>
+    </>
   )
 }
 
