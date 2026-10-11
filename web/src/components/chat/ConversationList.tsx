@@ -254,12 +254,12 @@ const ConversationList = ({ activeId }: { activeId: string | null }) => {
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors hover:bg-zinc-900 ${
+              className={`flex-1 py-2 text-sm font-semibold transition-colors hover:bg-zinc-900 ${
                 tab === id ? "text-white" : "text-zinc-400"
               }`}
             >
               <span
-                className={`relative pb-3 inline-flex items-center gap-1.5 ${
+                className={`relative pb-2 inline-flex items-center gap-1.5 ${
                   tab === id
                     ? "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:rounded-full after:bg-mainclr"
                     : ""
