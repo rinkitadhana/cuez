@@ -143,8 +143,8 @@ const SearchPage = () => {
   return (
     <>
       <PageHead title={q ? `${q} - Search / Cuez` : "Search / Cuez"} />
-      <div className="sticky top-0 z-20 bg-bgClr border-b border-zinc-700">
-        <div className="flex items-center gap-3 px-4 h-[60px]">
+      <div className="sticky top-0 z-20 bg-bgClr">
+        <div className="flex items-center gap-3 px-4 h-[60px] border-b border-zinc-700">
           <MenuButton />
           <div className="relative flex-1">
             <input
@@ -172,7 +172,7 @@ const SearchPage = () => {
           </div>
         </div>
         {q && (
-          <div className="flex">
+          <div className="flex border-b border-zinc-700">
             {tabs.map(({ id, label }) => (
               <button
                 key={id}
