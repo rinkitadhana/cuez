@@ -121,10 +121,13 @@ const NotificationMessage = ({
         !notification.read ? "bg-indigo-500/5" : ""
       }`}
       onClick={() => {
+        // The user or post may have been deleted since.
         if (notification.type === "follow") {
-          router.push(`/${notification.from.username}`)
-        } else if (["like", "repost", "reply"].includes(notification.type)) {
-          router.push(`/post/${notification.post?._id}`)
+          if (notification.from?.username) {
+            router.push(`/${notification.from.username}`)
+          }
+        } else if (notification.post?._id) {
+          router.push(`/post/${notification.post._id}`)
         }
       }}
     >
@@ -135,7 +138,9 @@ const NotificationMessage = ({
       <div
         onClick={(e) => {
           e.stopPropagation()
-          router.push(`/${notification?.from?.username}`)
+          if (notification?.from?.username) {
+            router.push(`/${notification.from.username}`)
+          }
         }}
         className="relative shrink-0 mr-3 sm:mr-4"
       >
@@ -155,7 +160,9 @@ const NotificationMessage = ({
           <span
             onClick={(e) => {
               e.stopPropagation()
-              router.push(`/${notification?.from?.username}`)
+              if (notification?.from?.username) {
+                router.push(`/${notification.from.username}`)
+              }
             }}
             className="font-bold hover:underline text-sm sm:text-base text-white"
           >
