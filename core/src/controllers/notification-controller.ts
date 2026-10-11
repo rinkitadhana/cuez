@@ -34,19 +34,6 @@ const getNotifications = async (req: Request, res: Response): Promise<void> => {
   }
 }
 
-const deleteAllNotifications = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const userId = req.user._id.toString()
-    await Notification.deleteMany({ to: userId })
-    res.status(200).json({ message: "All notifications deleted successfully!" })
-  } catch (error) {
-    errorHandler(res, error)
-  }
-}
-
 const deleteNotification = async (
   req: Request,
   res: Response
@@ -83,6 +70,5 @@ const getUnreadNotificationsCount = async (
 export {
   getNotifications,
   deleteNotification,
-  deleteAllNotifications,
   getUnreadNotificationsCount,
 }

@@ -30,60 +30,6 @@ export const useGetNotifications = () => {
   })
 }
 
-interface DeleteAllNotificationsResponse {
-  message: string
-}
-
-const deleteAllNotifications =
-  async (): Promise<DeleteAllNotificationsResponse> => {
-    const response = await axios.delete<DeleteAllNotificationsResponse>(
-      `${config.backendUrl}/notification/delete-all`,
-      {
-        withCredentials: true,
-      }
-    )
-    return response.data
-  }
-
-export const useDeleteAllNotifications = () => {
-  const queryClient = useQueryClient()
-  const { setMessage } = useMessageStore()
-  return useMutation<
-    DeleteAllNotificationsResponse,
-    AxiosError,
-    void,
-    { snap?: Snapshot }
-  >({
-    mutationFn: deleteAllNotifications,
-    onMutate: async () => {
-      const snap = await snapshot(queryClient, notificationQueries)
-      queryClient.setQueryData<NotificationPages>(
-        ["notifications"],
-        (data) =>
-          data && {
-            pages: [{ notifications: [], nextCursor: null }],
-            pageParams: [null],
-          }
-      )
-      queryClient.setQueryData<GetUnreadNotificationsCountResponse>(
-        ["unread-notifications-count"],
-        (old) => old && { ...old, count: 0 }
-      )
-      return { snap }
-    },
-    onSuccess: (data: DeleteAllNotificationsResponse) => {
-      setMessage(data.message, "success")
-    },
-    onError: (error: AxiosError, _, context) => {
-      restore(queryClient, context?.snap)
-      const message =
-        (error.response?.data as DeleteAllNotificationsResponse)?.message ||
-        "Failed to delete all notifications!"
-      setMessage(message, "error")
-    },
-  })
-}
-
 interface DeleteNotificationResponse {
   message: string
 }
