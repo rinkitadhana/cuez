@@ -7,6 +7,7 @@ import {
   getLikedPosts,
   getUserReplies,
   likeUnlikePost,
+  repostPost,
   getFollowingPosts,
   getUserPosts,
   editPost,
@@ -26,6 +27,7 @@ router.post("/create-post", protectRoute, createPost)
 router.patch("/edit-post/:id", protectRoute, editPost)
 router.delete("/delete-post/:id", protectRoute, deletePost)
 router.post("/like-post/:id", protectRoute, likeUnlikePost)
+router.post("/repost-post/:id", protectRoute, repostPost)
 router.get("/is-liked/:id", protectRoute, isLiked)
 router.get("/all-posts", getAllPosts)
 router.get("/following-posts", protectRoute, getFollowingPosts)

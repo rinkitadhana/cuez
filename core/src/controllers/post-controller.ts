@@ -8,6 +8,12 @@ import { getPagination, paginate } from "../utils/pagination"
 
 const PUBLIC_USER_FIELDS = "-password -email -bookmarks"
 
+// For lists that can contain repost entries: include the original post.
+const REPOST_POPULATE = {
+  path: "repostOf",
+  populate: { path: "user", select: PUBLIC_USER_FIELDS },
+}
+
 const createPost = async (req: Request, res: Response): Promise<void> => {
   try {
     const { text, img, video, parentId } = req.body
@@ -171,6 +177,14 @@ const deletePost = async (req: Request, res: Response): Promise<void> => {
     }
 
     await Notification.deleteMany({ post: post._id })
+    // Reposts of this post go with it; deleting a repost entry un-reposts.
+    await Post.deleteMany({ repostOf: post._id })
+    if (post.repostOf) {
+      await Post.updateOne(
+        { _id: post.repostOf },
+        { $pull: { reposts: post.user } }
+      )
+    }
 
     await Post.findByIdAndDelete(req.params.id)
     res.status(200).json({ message: "Post deleted successfully!" })
@@ -202,10 +216,15 @@ const likeUnlikePost = async (req: Request, res: Response): Promise<void> => {
         type: "like",
         post: post._id,
       })
-      res.status(200).json({ message: "Post unliked successfully!", liked: false })
+      res
+        .status(200)
+        .json({ message: "Post unliked successfully!", liked: false })
       return
     }
-    await User.updateOne({ _id: userId }, { $addToSet: { likedPosts: post._id } })
+    await User.updateOne(
+      { _id: userId },
+      { $addToSet: { likedPosts: post._id } }
+    )
     if (userId.toString() !== post.user.toString()) {
       await Notification.create({
         from: userId,
@@ -220,10 +239,68 @@ const likeUnlikePost = async (req: Request, res: Response): Promise<void> => {
   }
 }
 
+const repostPost = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user._id
+    const found = await Post.findById(req.params.id).select("user repostOf")
+    if (!found) {
+      res.status(404).json({ message: "Post not found!" })
+      return
+    }
+    // Reposting a repost entry reposts the original.
+    const originalId = found.repostOf ?? found._id
+    const original = await Post.findById(originalId).select("user")
+    if (!original) {
+      res.status(404).json({ message: "Post not found!" })
+      return
+    }
+    // Atomic toggle, same as likes.
+    const added = await Post.updateOne(
+      { _id: original._id, reposts: { $ne: userId } },
+      { $addToSet: { reposts: userId } }
+    )
+    if (added.modifiedCount === 0) {
+      await Post.updateOne(
+        { _id: original._id },
+        { $pull: { reposts: userId } }
+      )
+      await Post.deleteOne({ user: userId, repostOf: original._id })
+      await Notification.deleteMany({
+        from: userId,
+        to: original.user,
+        type: "repost",
+        post: original._id,
+      })
+      res.status(200).json({ message: "Repost removed", reposted: false })
+      return
+    }
+    await Post.updateOne(
+      { user: userId, repostOf: original._id },
+      { $setOnInsert: { user: userId, repostOf: original._id, parent: null } },
+      { upsert: true }
+    )
+    if (userId.toString() !== original.user.toString()) {
+      await Notification.create({
+        from: userId,
+        to: original.user,
+        type: "repost",
+        post: original._id,
+      })
+    }
+    res.status(200).json({ message: "Reposted", reposted: true })
+  } catch (error) {
+    errorHandler(res, error)
+  }
+}
+
 const getAllPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const { limit, cursorFilter, sort } = getPagination(req)
-    const posts = await Post.find({ parent: null, ...cursorFilter })
+    const posts = await Post.find({
+      parent: null,
+      repostOf: null,
+      ...cursorFilter,
+    })
       .sort(sort)
       .limit(limit + 1)
       .populate({ path: "user", select: PUBLIC_USER_FIELDS })
@@ -315,12 +392,13 @@ const getFollowingPosts = async (
     const { limit, cursorFilter, sort } = getPagination(req)
     const followingPosts = await Post.find({
       user: { $in: user.followings },
-      parent: null, // Only get top-level posts
+      parent: null, // Only get top-level posts (and reposts)
       ...cursorFilter,
     })
       .sort(sort)
       .limit(limit + 1)
       .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+      .populate(REPOST_POPULATE)
     const { page, nextCursor } = paginate(followingPosts, limit)
     res.status(200).json({
       message: "Following posts fetched successfully!",
@@ -336,7 +414,7 @@ const getTrendingPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const trendingPosts = await Post.aggregate([
       {
-        $match: { parent: null }, // Only get top-level posts
+        $match: { parent: null, repostOf: null }, // Original top-level posts
       },
       {
         $addFields: {
@@ -380,12 +458,13 @@ const getUserPosts = async (req: Request, res: Response): Promise<void> => {
     const { limit, cursorFilter, sort } = getPagination(req)
     const userPosts = await Post.find({
       user: user._id,
-      parent: null, // Only get top-level posts
+      parent: null, // Only get top-level posts (and reposts)
       ...cursorFilter,
     })
       .sort(sort)
       .limit(limit + 1)
       .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+      .populate(REPOST_POPULATE)
     const { page, nextCursor } = paginate(userPosts, limit)
     res.status(200).json({
       message: "User posts fetched successfully!",
@@ -456,7 +535,10 @@ const bookmarkPost = async (req: Request, res: Response): Promise<void> => {
         .json({ message: "Post unbookmarked successfully!", bookmarked: false })
       return
     }
-    await User.updateOne({ _id: userId }, { $addToSet: { bookmarks: post._id } })
+    await User.updateOne(
+      { _id: userId },
+      { $addToSet: { bookmarks: post._id } }
+    )
     res
       .status(200)
       .json({ message: "Post bookmarked successfully!", bookmarked: true })
@@ -594,6 +676,7 @@ export {
   createPost,
   deletePost,
   likeUnlikePost,
+  repostPost,
   getAllPosts,
   getLikedPosts,
   getUserReplies,
