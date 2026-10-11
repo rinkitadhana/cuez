@@ -289,7 +289,30 @@ const getFollowsYou = async (req: Request, res: Response): Promise<void> => {
   }
 }
 
+// GET /username-available?username= — for the change-username form.
+const checkUsernameAvailable = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const username = normalizeUsername(req.query.username)
+    const error = validateUsername(username)
+    if (error) {
+      res.status(200).json({ available: false, message: error })
+      return
+    }
+    const taken = await User.exists({ username, _id: { $ne: req.user._id } })
+    res.status(200).json({
+      available: !taken,
+      message: taken ? "This username is already taken" : "Username is available",
+    })
+  } catch (error) {
+    errorHandler(res, error)
+  }
+}
+
 export {
+  checkUsernameAvailable,
   getUserProfile,
   followUnfollowUser,
   getSuggestedUsers,

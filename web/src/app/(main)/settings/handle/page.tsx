@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import axios from "axios"
+import config from "@/config/config"
 import { useGoBack } from "@/hooks/useGoBack"
 import { useRouter } from "next/navigation"
 import { AtSign, Check, Info, LoaderCircle, UserRound } from "lucide-react"
@@ -41,40 +43,53 @@ const HandlePage = () => {
     setIsAvailable(false)
   }
 
-  const checkUsernameAvailability = async () => {
-    if (!username) {
+  // Ask the server (format, reserved names, taken) shortly after typing stops.
+  const latestCheck = useRef("")
+  const checkUsernameAvailability = async (value = username) => {
+    latestCheck.current = value
+    if (!value) {
       setError("Username cannot be empty")
-      return
+      return false
     }
-
-    if (username.length < 3) {
-      setError("Username must be at least 3 characters")
-      return
-    }
-
-    if (username === originalUsername) {
+    if (value === originalUsername) {
       setIsAvailable(true)
-      return
+      return true
     }
-
     setIsChecking(true)
-    // Simulating API call to check username availability
-    setTimeout(() => {
-      // In a real app, this would be an actual API call
-      const randomAvailable = Math.random() > 0.3
-      setIsAvailable(randomAvailable)
-      if (!randomAvailable) {
-        setError("This username is already taken")
-      }
-      setIsChecking(false)
-    }, 800)
+    try {
+      const { data } = await axios.get<{ available: boolean; message: string }>(
+        `${config.backendUrl}/user/username-available`,
+        { params: { username: value }, withCredentials: true }
+      )
+      // Ignore answers for something the user has since changed.
+      if (latestCheck.current !== value) return false
+      setIsAvailable(data.available)
+      setError(data.available ? "" : data.message)
+      return data.available
+    } catch {
+      setError("Couldn't check this username. Try again.")
+      return false
+    } finally {
+      if (latestCheck.current === value) setIsChecking(false)
+    }
   }
 
-  const updateUsername = () => {
-    if (!isAvailable) {
-      checkUsernameAvailability()
+  useEffect(() => {
+    if (!username || username === originalUsername) {
+      setIsChecking(false)
       return
     }
+    const timer = setTimeout(() => checkUsernameAvailability(username), 400)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username, originalUsername])
+
+  const updateUsername = async () => {
+    if (username === originalUsername) {
+      goBack()
+      return
+    }
+    if (!isAvailable && !(await checkUsernameAvailability())) return
 
     updateUserProfile(
       { username },
@@ -116,7 +131,7 @@ const HandlePage = () => {
                 type="text"
                 value={username}
                 onChange={handleUsernameChange}
-                onBlur={checkUsernameAvailability}
+                maxLength={20}
                 className="w-full placeholder:text-zinc-500 bg-transparent outline-none placeholder:select-none"
                 placeholder="Choose a username"
               />
@@ -142,7 +157,7 @@ const HandlePage = () => {
                 <h3 className="font-semibold">Username requirements</h3>
                 <ul className="text-sm text-zinc-400 mt-1 space-y-1">
                   <li>• Only letters, numbers, and underscores</li>
-                  <li>• At least 3 characters</li>
+                  <li>• 3 to 20 characters</li>
                   <li>• Cannot contain spaces or special characters</li>
                   <li>• Must be unique</li>
                 </ul>
@@ -159,9 +174,9 @@ const HandlePage = () => {
             </button>
             <button
               onClick={updateUsername}
-              disabled={isUpdating || isChecking || !!error}
+              disabled={isUpdating || isChecking || !!error || !username}
               className={`px-4 py-2 rounded-xl font-semibold flex items-center justify-center min-w-20 ${
-                isUpdating || isChecking || !!error
+                isUpdating || isChecking || !!error || !username
                   ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
                   : "bg-mainclr hover:bg-mainclr/80"
               } transition-colors`}

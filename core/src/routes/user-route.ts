@@ -1,6 +1,7 @@
 import express from "express"
 import { protectRoute } from "../middlewares/ProtectRoute"
 import {
+  checkUsernameAvailable,
   followUnfollowUser,
   getSuggestedUsers,
   getUserProfile,
@@ -13,6 +14,7 @@ import {
 const router = express.Router()
 
 router.get("/profile/:username", getUserProfile)
+router.get("/username-available", protectRoute, checkUsernameAvailable)
 router.get("/suggested", protectRoute, getSuggestedUsers)
 router.post("/follow/:id", protectRoute, followUnfollowUser)
 router.get("/is-following/:id", protectRoute, isFollowing)
