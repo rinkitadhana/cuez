@@ -21,12 +21,12 @@ const PostItem = ({ post }: { post: Post }) => {
     <div className="relative">
       <Link
         href={`/${post.user?.username}`}
-        className="absolute left-4 top-2 z-10 flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:underline"
+        className="absolute left-4 top-2.5 z-10 flex items-center gap-2 text-sm font-semibold text-zinc-400 hover:underline"
       >
-        <HiArrowPathRoundedSquare className="size-4 ml-5" />
+        <HiArrowPathRoundedSquare className="size-[18px]" />
         {byMe ? "You" : post.user?.fullName || post.user?.username} reposted
       </Link>
-      <div className="[&>section]:pt-8">
+      <div className="[&>section]:pt-9">
         <PostStructure post={post.repostOf} />
       </div>
     </div>
