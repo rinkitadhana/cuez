@@ -19,27 +19,24 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
 ]
 
+// Same look as the empty Bookmarks page.
 const EmptyState = ({ q }: { q: string }) => (
-  <div className="flex flex-col items-center text-center gap-2 px-6 py-16">
-    {q ? (
-      <>
-        <SearchX className="size-10 text-zinc-500 mb-2" />
-        <h2 className="text-xl font-semibold break-all">
-          No results for &ldquo;{q}&rdquo;
-        </h2>
-        <p className="text-sm text-zinc-400">
-          Try searching for something else, or check your spelling.
-        </p>
-      </>
-    ) : (
-      <>
-        <Search className="size-10 text-zinc-500 mb-2" />
-        <h2 className="text-xl font-semibold">Search Cuez</h2>
-        <p className="text-sm text-zinc-400">
-          Find posts, replies and people.
-        </p>
-      </>
-    )}
+  <div className="flex flex-col items-center justify-center h-[60vh] px-6 text-zinc-400 text-center">
+    <div className="relative mb-6">
+      {q ? (
+        <SearchX className="w-16 h-16 animate-pulse" />
+      ) : (
+        <Search className="w-16 h-16 animate-pulse" />
+      )}
+    </div>
+    <h3 className="text-xl font-medium mb-2 break-all">
+      {q ? <>No results for &ldquo;{q}&rdquo;</> : "Search Cuez"}
+    </h3>
+    <p className="text-sm text-zinc-500">
+      {q
+        ? "Try searching for something else, or check your spelling"
+        : "Find posts, replies and people"}
+    </p>
   </div>
 )
 
