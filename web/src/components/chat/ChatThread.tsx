@@ -309,7 +309,7 @@ const ChatThread = ({ conversationId }: { conversationId: string }) => {
         {!messages.isLoading && !messages.hasNextPage && other && (
           <Link
             href={`/${other.username}`}
-            className="flex flex-col items-center text-center gap-1 py-8 mb-2 border-b border-zinc-800 hover:bg-zinc-900/50 rounded-xl transition-colors"
+            className="flex flex-col items-center text-center gap-1 py-8 mb-2 hover:bg-zinc-900/50 rounded-xl transition-colors"
           >
             <SafeImage
               kind="avatar"
