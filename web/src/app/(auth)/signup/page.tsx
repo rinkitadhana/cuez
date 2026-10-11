@@ -70,14 +70,16 @@ const SignUp = () => {
     }
   }
 
+  const flashUsernameError = () => {
+    setUsernameError(true)
+    setTimeout(() => {
+      setUsernameError(false)
+    }, 5000)
+  }
+
   const handleSignup = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (formData.username == "") {
-      setUsernameError(true)
-      setTimeout(() => {
-        setUsernameError(false)
-      }, 5000)
-    }
+    if (formData.username == "") flashUsernameError()
     if (formData.email == "") {
       setEmailError(true)
       setTimeout(() => {
@@ -101,6 +103,21 @@ const SignUp = () => {
       setTimeout(() => {
         setOtpError(false)
       }, 5000)
+    }
+    if (
+      !formData.username ||
+      !formData.email ||
+      !formData.password ||
+      !confirmPassword ||
+      !formData.otp
+    ) {
+      setMessage("Please fill in all fields", "error")
+      return
+    }
+    if (formData.username.length < 3) {
+      flashUsernameError()
+      setMessage("Username must be 3-20 characters", "error")
+      return
     }
     if (!passwordsMatch) {
       setMessage("Password doesn't match!", "error")
