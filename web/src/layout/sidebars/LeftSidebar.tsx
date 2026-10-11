@@ -34,6 +34,7 @@ import { SlOptions } from "react-icons/sl"
 import { useGetUnreadNotificationsCount } from "@/hooks/useNotification"
 import { Loader2 } from "lucide-react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import ChatBadge from "@/components/chat/ChatBadge"
 
 const LeftSidebar = () => {
   const pathname = usePathname()
@@ -145,8 +146,18 @@ const LeftSidebar = () => {
       href: "/chat",
       label: "Chat",
       icon: {
-        filled: <MdChatBubble className="text-xl" />,
-        outline: <MdChatBubbleOutline className="text-xl" />,
+        filled: (
+          <div className="relative">
+            <MdChatBubble className="text-xl" />
+            <ChatBadge />
+          </div>
+        ),
+        outline: (
+          <div className="relative">
+            <MdChatBubbleOutline className="text-xl" />
+            <ChatBadge />
+          </div>
+        ),
       },
     },
     {

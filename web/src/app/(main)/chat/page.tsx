@@ -1,14 +1,6 @@
-import ComingSoon from "@/components/ComingSoon"
-import PageHead from "@/components/pageComponents/PageHead"
-import MainWrapper from "@/layout/MainWrapper"
+"use client"
+import ChatLayout from "@/components/chat/ChatLayout"
 
-const page = () => {
-  return (
-    <MainWrapper>
-      <PageHead title="Chat / Cuez" />
-      <ComingSoon />
-    </MainWrapper>
-  )
-}
+const page = () => <ChatLayout conversationId={null} />
 
 export default page

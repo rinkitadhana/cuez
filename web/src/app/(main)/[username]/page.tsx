@@ -3,9 +3,10 @@ import MainWrapper from "@/layout/MainWrapper"
 import Header from "./profileComponent/Header"
 import Image from "next/image"
 import SafeImage from "@/components/media/SafeImage"
-import { Calendar, Link, MapPin } from "lucide-react"
+import { Calendar, Link, Loader2, Mail, MapPin } from "lucide-react"
 import { useFollowUnfollowUser, useGetUserProfile } from "@/hooks/useUser"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
+import { useStartConversation } from "@/hooks/useChat"
 import { useGetMe } from "@/hooks/useAuth"
 import GetUserPost from "./profileComponent/GetUserPost"
 import GetLikedPost from "./profileComponent/GetLikedPost"
@@ -25,6 +26,9 @@ const UserProfile = () => {
   const { data, isLoading, isError } = useGetUserProfile(username as string)
   const { data: authUser } = useGetMe()
   const { requireAuth } = useRequireAuth()
+  const router = useRouter()
+  const { mutate: startConversation, isPending: isStartingChat } =
+    useStartConversation()
   const { mutate: followUnfollowUser } = useFollowUnfollowUser()
   const [isUsersListOpen, setIsUsersListOpen] = useState(false)
   const [userType, setUserType] = useState<"followers" | "following">(
@@ -86,24 +90,43 @@ const UserProfile = () => {
                 priority
                 onClick={() => setIsImageModalOpen(true)}
               />
-              {!owner && (
-                <>
+              {!owner && user && (
+                <div className="absolute -bottom-[50px] right-5 flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      requireAuth("message", () =>
+                        startConversation(user._id, {
+                          onSuccess: (c) => router.push(`/chat/${c._id}`),
+                        })
+                      )
+                    }
+                    disabled={isStartingChat}
+                    aria-label="Message"
+                    title="Message"
+                    className="p-2 rounded-xl border border-zinc-700 hover:bg-zinc-800 transition-all duration-200 disabled:opacity-60"
+                  >
+                    {isStartingChat ? (
+                      <Loader2 className="size-5 animate-spin" />
+                    ) : (
+                      <Mail className="size-5" />
+                    )}
+                  </button>
                   {isFollowing ? (
                     <button
                       onClick={handleFollowUnfollow}
-                      className="absolute -bottom-[50px] right-5 bg-zinc-800 text-white font-semibold hover:bg-zinc-700 transition-all duration-200 px-4 py-1.5 rounded-xl"
+                      className="bg-zinc-800 text-white font-semibold hover:bg-zinc-700 transition-all duration-200 px-4 py-1.5 rounded-xl"
                     >
                       Following
                     </button>
                   ) : (
                     <button
                       onClick={handleFollowUnfollow}
-                      className="absolute -bottom-[50px] right-5 bg-mainclr text-white font-semibold hover:bg-mainclr/80 transition-all duration-200 px-4 py-1.5 rounded-xl"
+                      className="bg-mainclr text-white font-semibold hover:bg-mainclr/80 transition-all duration-200 px-4 py-1.5 rounded-xl"
                     >
                       Follow
                     </button>
                   )}
-                </>
+                </div>
               )}
             </div>
             <div className="px-5 py-3 flex flex-col gap-2.5">

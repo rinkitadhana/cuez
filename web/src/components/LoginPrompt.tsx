@@ -18,6 +18,7 @@ const subtitles: Record<LoginPromptReason, string> = {
   follow: "Log in to follow people and see their posts.",
   post: "Log in to share what you're building.",
   feed: "Log in to see posts from people you follow.",
+  message: "Log in to send messages.",
   page: "Log in or create an account to continue.",
 }
 

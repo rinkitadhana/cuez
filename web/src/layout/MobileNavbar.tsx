@@ -3,6 +3,7 @@ import { useGetMe } from "@/hooks/useAuth"
 import { useGetUnreadNotificationsCount } from "@/hooks/useNotification"
 import { Loader2 } from "lucide-react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import ChatBadge from "@/components/chat/ChatBadge"
 import { usePathname } from "next/navigation"
 import NextLink from "next/link"
 import { BsBell, BsBellFill } from "react-icons/bs"
@@ -88,8 +89,18 @@ const MobileNavbar = () => {
       href: "/chat",
       label: "Chat",
       icon: {
-        filled: <MdChatBubble className="text-2xl" />,
-        outline: <MdChatBubbleOutline className="text-2xl" />,
+        filled: (
+          <div className="relative">
+            <MdChatBubble className="text-2xl" />
+            <ChatBadge />
+          </div>
+        ),
+        outline: (
+          <div className="relative">
+            <MdChatBubbleOutline className="text-2xl" />
+            <ChatBadge />
+          </div>
+        ),
       },
     },
     {

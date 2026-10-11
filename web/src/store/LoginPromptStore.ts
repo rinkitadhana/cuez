@@ -8,6 +8,7 @@ export type LoginPromptReason =
   | "follow"
   | "post"
   | "feed"
+  | "message"
   | "page"
 
 interface LoginPromptStore {

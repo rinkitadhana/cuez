@@ -6,6 +6,7 @@ import { useEffect } from "react"
 import LoadingScreen from "./LoadingScreen"
 import LoginPrompt from "./LoginPrompt"
 import useLoginPromptStore from "@/store/LoginPromptStore"
+import ChatSocketBridge from "./chat/ChatSocketBridge"
 
 // Pages that only make sense for a logged-in user. Everything else (home,
 // post pages, profiles, search) is browsable by guests.
@@ -49,6 +50,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     <>
       {children}
       <LoginPrompt />
+      <ChatSocketBridge />
     </>
   )
 }
