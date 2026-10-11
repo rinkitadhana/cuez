@@ -10,7 +10,7 @@ const Header = () => {
   const { username } = useParams()
   const { data: authUser } = useGetMe()
   const { data: user } = useGetUserProfile(username as string)
-  const owner = authUser?.user._id === user?.user._id
+  const owner = !!authUser?.user && authUser.user._id === user?.user?._id
 
   const handleBack = () => {
     goBack()
