@@ -6,6 +6,7 @@ import userRoute from "./routes/user-route"
 import postRoute from "./routes/post-route"
 import notificationRoute from "./routes/notification-route"
 import feedbackRoute from "./routes/feedback-route"
+import searchRoute from "./routes/search-route"
 
 import cookieParser from "cookie-parser"
 import cors from "cors"
@@ -44,6 +45,7 @@ app.use("/api/user", userRoute)
 app.use("/api/post", postRoute)
 app.use("/api/notification", notificationRoute)
 app.use("/api/feedback", feedbackRoute)
+app.use("/api/search", searchRoute)
 
 //Listening
 app.listen(PORT, () => {
