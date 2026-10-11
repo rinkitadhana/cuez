@@ -2,7 +2,7 @@
 import MainWrapper from "@/layout/MainWrapper"
 import Header from "./profileComponent/Header"
 import Image from "next/image"
-import { Calendar, Link, MapPin, X } from "lucide-react"
+import { Calendar, Link, MapPin } from "lucide-react"
 import { useFollowUnfollowUser, useGetUserProfile } from "@/hooks/useUser"
 import { useParams } from "next/navigation"
 import { useGetMe } from "@/hooks/useAuth"
@@ -14,6 +14,7 @@ import NoUser from "@/components/notAvailable/NoUser"
 import GetUsersList from "./profileComponent/GetUsersList"
 import FollowsYou from "@/components/pageComponents/FollowsYou"
 import PageHead from "@/components/pageComponents/PageHead"
+import MediaLightbox from "@/components/media/MediaLightbox"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 const UserProfile = () => {
   const { username } = useParams()
@@ -201,63 +202,18 @@ const UserProfile = () => {
         )}
       </div>
 
-      {isImageModalOpen && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsImageModalOpen(false)
-          }}
-          className="fixed inset-0 bg-bgClr/80 backdrop-blur-sm flex justify-center items-center z-[10000]"
-        >
-          <div className="rounded-xl flex justify-center items-center">
-            <Image
-              src={user?.profileImg || ""}
-              alt="Profile image"
-              width={800}
-              height={800}
-              quality={100}
-              className="rounded-xl w-[400px] h-[400px] select-none bg-white object-cover"
-            />
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsImageModalOpen(false)
-            }}
-            className="absolute top-4 right-4 text-white hover:bg-zinc-700/50 rounded-xl p-2 transition-all duration-200"
-          >
-            <X />
-          </button>
-        </div>
-      )}
-      {isCoverImageModalOpen && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsCoverImageModalOpen(false)
-          }}
-          className="fixed inset-0 bg-bgClr/80 backdrop-blur-sm flex justify-center items-center z-[10000]"
-        >
-          <div className="w-[95%] h-[600px] rounded-xl flex justify-center items-center">
-            <Image
-              src={user?.coverImg || ""}
-              alt="Cover image"
-              width={1920}
-              height={1080}
-              className="rounded-xl max-w-full select-none bg-white max-h-full object-cover"
-            />
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsCoverImageModalOpen(false)
-            }}
-            className="absolute top-4 right-4 text-white hover:bg-zinc-700/50 rounded-xl p-2 transition-all duration-200"
-          >
-            <X />
-          </button>
-        </div>
-      )}
+      <MediaLightbox
+        src={user?.profileImg || ""}
+        alt="Profile image"
+        open={isImageModalOpen && !!user?.profileImg}
+        onClose={() => setIsImageModalOpen(false)}
+      />
+      <MediaLightbox
+        src={user?.coverImg || ""}
+        alt="Cover image"
+        open={isCoverImageModalOpen && !!user?.coverImg}
+        onClose={() => setIsCoverImageModalOpen(false)}
+      />
       {user && (
         <GetUsersList
           user={user}

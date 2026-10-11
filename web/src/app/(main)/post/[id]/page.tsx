@@ -15,7 +15,6 @@ import {
   useGetReplyCount,
   useGetParentThread,
 } from "@/hooks/usePost"
-import { X } from "lucide-react"
 import config from "@/config/config"
 import useMessageStore from "@/store/messageStore"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -33,7 +32,7 @@ import CuezBadge from "@/components/pageComponents/CuezBadge"
 import PageHead from "@/components/pageComponents/PageHead"
 import ParentThread from "@/components/pageComponents/ParentThread"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import LazyVideo from "@/components/LazyVideo"
+import PostMedia from "@/components/media/PostMedia"
 
 const PostPage = () => {
   const { id } = useParams()
@@ -41,7 +40,6 @@ const PostPage = () => {
   const { data: post, isPending: isPostPending } = useGetPostById(id as string)
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const [showWarning, setShowWarning] = useState(false)
   const warningRef = useRef<HTMLDivElement>(null)
@@ -295,29 +293,11 @@ const PostPage = () => {
                 </div>
                 <div className="flex flex-col gap-4 w-full">
                   <div>{post?.post?.text}</div>
-                  {post?.post?.img && (
-                    <div
-                      onClick={() => setIsImageModalOpen(true)}
-                      className="cursor-pointer select-none"
-                    >
-                      <Image
-                        src={post?.post?.img}
-                        alt="Post image"
-                        width={600}
-                        height={600}
-                        sizes="(max-width: 768px) 100vw, 600px"
-                        className="rounded-lg w-full select-none"
-                      />
-                    </div>
-                  )}
-                  {post?.post?.video && (
-                    <div>
-                      <LazyVideo
-                        src={post.post.video}
-                        className="rounded-lg w-full select-none"
-                      />
-                    </div>
-                  )}
+                  <PostMedia
+                    img={post?.post?.img}
+                    video={post?.post?.video}
+                    variant="detail"
+                  />
                   <div className="text-sm text-zinc-400">
                     {isUpdated
                       ? `Edited on ${formatDateTime(
@@ -428,23 +408,6 @@ const PostPage = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-          {isImageModalOpen && (
-            <div className="fixed inset-0 bg-bgClr/50 backdrop-blur-sm flex justify-center items-center z-[10000]">
-              <Image
-                src={post?.post?.img || ""}
-                alt="Post image"
-                width={1920}
-                height={1080}
-                className="rounded-lg max-w-full max-h-full object-contain select-none"
-              />
-              <button
-                onClick={() => setIsImageModalOpen(false)}
-                className="absolute top-4 right-4 text-white hover:bg-zinc-700/50 rounded-xl p-2 transition-all duration-200"
-              >
-                <X />
-              </button>
             </div>
           )}
         </section>

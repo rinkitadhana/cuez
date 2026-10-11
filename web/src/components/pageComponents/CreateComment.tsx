@@ -245,9 +245,10 @@ const CreateComment = ({ commentActive }: { commentActive: boolean }) => {
                   <Image
                     src={formData.img}
                     alt="Selected image"
-                    width={200}
-                    height={200}
-                    className="w-full max-h-[200px] object-contain"
+                    width={0}
+                    height={0}
+                    sizes="600px"
+                    className="w-full h-auto max-h-[300px] object-contain rounded-2xl border border-zinc-800 bg-zinc-900"
                   />
                 </div>
               )}
@@ -262,7 +263,7 @@ const CreateComment = ({ commentActive }: { commentActive: boolean }) => {
                   <video
                     src={formData.video}
                     controls
-                    className="w-full max-h-[300px]"
+                    className="w-full max-h-[300px] rounded-2xl border border-zinc-800 bg-black"
                   />
                 </div>
               )}

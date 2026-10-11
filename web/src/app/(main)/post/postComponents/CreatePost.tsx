@@ -213,15 +213,16 @@ const CreatePost = () => {
                         <Image
                           src={formData.img}
                           alt="Selected image"
-                          className="rounded-lg w-full"
-                          width={1000}
-                          height={1000}
+                          className="w-full h-auto max-h-[400px] object-contain rounded-2xl border border-zinc-800 bg-zinc-900"
+                          width={0}
+                          height={0}
+                          sizes="600px"
                         />
                       ) : (
                         <video
                           src={formData.video}
                           controls
-                          className="rounded-lg w-full"
+                          className="w-full max-h-[400px] rounded-2xl border border-zinc-800 bg-black"
                         />
                       )}
                       <button

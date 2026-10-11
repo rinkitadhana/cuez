@@ -22,7 +22,7 @@ import EditPost from "./EditPost"
 import { useFollowUnfollowUser } from "@/hooks/useUser"
 import { isOptimisticId } from "@/lib/queryCache"
 import CuezBadge from "./CuezBadge"
-import LazyVideo from "../LazyVideo"
+import PostMedia from "../media/PostMedia"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 
 interface PostStructureProps {
@@ -33,7 +33,6 @@ interface PostStructureProps {
 const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const [showWarning, setShowWarning] = useState(false)
   const warningRef = useRef<HTMLDivElement>(null)
@@ -248,30 +247,9 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
           {/* Post content */}
           {post.text && <p className="leading-relaxed py-1">{post.text}</p>}
 
-          {post?.img && (
-            <div
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsImageModalOpen(true)
-              }}
-              className="relative h-80 max-h-96 overflow-hidden rounded-xl my-2"
-            >
-              <Image
-                src={post.img}
-                alt="Post image"
-                fill
-                sizes="(max-width: 768px) 100vw, 600px"
-                className="object-cover cursor-pointer hover:brightness-90 transition-all duration-200"
-              />
-            </div>
-          )}
-
-          {post?.video && (
+          {(post.img || post.video) && (
             <div className="my-2">
-              <LazyVideo
-                src={post.video}
-                className="rounded-lg w-full select-none h-80 bg-black"
-              />
+              <PostMedia img={post.img} video={post.video} />
             </div>
           )}
 
@@ -395,32 +373,6 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
         </div>
       )}
 
-      {/* Image modal */}
-      {isImageModalOpen && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsImageModalOpen(false)
-          }}
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
-        >
-          <div className="relative w-[50%]  mx-2">
-            <button
-              onClick={() => setIsImageModalOpen(false)}
-              className="absolute right-4 top-4 p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 transition-all duration-200"
-            >
-              <X className="size-6" />
-            </button>
-            <Image
-              src={post?.img || "/img/pfp/default.webp"}
-              alt="Post"
-              width={1200}
-              height={800}
-              className="w-full h-auto rounded-lg"
-            />
-          </div>
-        </div>
-      )}
     </section>
   )
 }
