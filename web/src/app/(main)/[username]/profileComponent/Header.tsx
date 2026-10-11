@@ -3,17 +3,17 @@ import { useGetMe } from "@/hooks/useAuth"
 import { useGetUserProfile } from "@/hooks/useUser"
 import { ArrowLeft, PencilLine } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useGoBack } from "@/hooks/useGoBack"
 import { useParams } from "next/navigation"
 const Header = () => {
-  const router = useRouter()
+  const goBack = useGoBack("/home")
   const { username } = useParams()
   const { data: authUser } = useGetMe()
   const { data: user } = useGetUserProfile(username as string)
   const owner = authUser?.user._id === user?.user._id
 
   const handleBack = () => {
-    router.back()
+    goBack()
   }
 
   return (

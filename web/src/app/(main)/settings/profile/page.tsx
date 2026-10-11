@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, ChangeEvent, useEffect } from "react"
+import { useGoBack } from "@/hooks/useGoBack"
 import { useGetMe } from "@/hooks/useAuth"
 import { useRouter } from "next/navigation"
 import SafeImage from "@/components/media/SafeImage"
@@ -20,6 +21,7 @@ interface UpdateProfileData {
 
 const ProfilePage = () => {
   const router = useRouter()
+  const goBack = useGoBack("/settings")
   const { data: authUser, isLoading } = useGetMe()
   const { mutate: updateUserProfile, isPending: isUpdating } =
     useUpdateUserProfile()
@@ -106,7 +108,7 @@ const ProfilePage = () => {
         <div className="flex sticky top-0 z-50 bg-bgClr items-center justify-between border-b border-zinc-700 px-4 h-[60px]">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.back()}
+              onClick={goBack}
               className="p-2 select-none hover:bg-zinc-800 rounded-xl w-fit cursor-pointer opacity-95"
             >
               <ArrowLeft size={20} />

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "../styles/globals.css"
 import { TanstackProvider } from "@/components/providers/tanstack-provider"
 import Message from "@/components/Messages"
+import NavigationTracker from "@/components/NavigationTracker"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,6 +59,7 @@ export default function RootLayout({
       >
         <TanstackProvider>
           <Message />
+          <NavigationTracker />
           {children}
         </TanstackProvider>
       </body>

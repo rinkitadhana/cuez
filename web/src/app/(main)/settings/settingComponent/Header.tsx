@@ -1,13 +1,16 @@
 "use client"
 
 import { ArrowLeft } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useGoBack } from "@/hooks/useGoBack"
+import { usePathname } from "next/navigation"
 
 const Header = ({ title }: { title: string }) => {
-  const router = useRouter()
+  // Sub-pages fall back to the settings list; the list itself to home.
+  const pathname = usePathname()
+  const goBack = useGoBack(pathname === "/settings" ? "/home" : "/settings")
 
   const handleBack = () => {
-    router.back()
+    goBack()
   }
 
   return (

@@ -32,6 +32,7 @@ import CuezBadge from "@/components/pageComponents/CuezBadge"
 import PageHead from "@/components/pageComponents/PageHead"
 import ParentThread from "@/components/pageComponents/ParentThread"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { useGoBack } from "@/hooks/useGoBack"
 import PostMedia from "@/components/media/PostMedia"
 
 const PostPage = () => {
@@ -39,6 +40,7 @@ const PostPage = () => {
   const searchParams = useSearchParams()
   const { data: post, isPending: isPostPending } = useGetPostById(id as string)
   const router = useRouter()
+  const goBack = useGoBack("/home")
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const [showWarning, setShowWarning] = useState(false)
@@ -105,7 +107,7 @@ const PostPage = () => {
     deletePost(post.post._id)
     setIsOpen(false)
     setShowWarning(false)
-    router.back()
+    goBack()
   }
 
   const userProfile = () => {

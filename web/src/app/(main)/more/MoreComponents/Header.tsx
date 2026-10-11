@@ -1,10 +1,10 @@
 "use client"
 import { ArrowLeft } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useGoBack } from "@/hooks/useGoBack"
 const Header = () => {
-  const router = useRouter()
+  const goBack = useGoBack("/home")
   const handleBack = () => {
-    router.back()
+    goBack()
   }
 
   return (

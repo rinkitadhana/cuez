@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useGoBack } from "@/hooks/useGoBack"
 import { useRouter } from "next/navigation"
 import { AtSign, Check, Info, LoaderCircle, UserRound } from "lucide-react"
 import MainWrapper from "@/layout/MainWrapper"
@@ -11,6 +12,7 @@ import PageHead from "@/components/pageComponents/PageHead"
 
 const HandlePage = () => {
   const router = useRouter()
+  const goBack = useGoBack("/settings")
   const { data: authUser } = useGetMe()
   const { mutate: updateUserProfile, isPending: isUpdating } =
     useUpdateUserProfile()
@@ -150,7 +152,7 @@ const HandlePage = () => {
 
           <div className="flex items-center gap-3 select-none mt-2">
             <button
-              onClick={() => router.back()}
+              onClick={goBack}
               className="px-4 py-2 rounded-xl border font-semibold border-zinc-700 hover:bg-zinc-800 transition-colors"
             >
               Cancel
