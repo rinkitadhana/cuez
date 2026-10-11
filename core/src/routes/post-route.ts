@@ -5,6 +5,7 @@ import {
   deletePost,
   getAllPosts,
   getLikedPosts,
+  getUserReplies,
   likeUnlikePost,
   getFollowingPosts,
   getUserPosts,
@@ -30,6 +31,7 @@ router.get("/all-posts", getAllPosts)
 router.get("/following-posts", protectRoute, getFollowingPosts)
 router.get("/trending-posts", getTrendingPosts)
 router.get("/liked-posts/:username", getLikedPosts)
+router.get("/user-replies/:username", getUserReplies)
 router.get("/user-posts/:username", getUserPosts)
 router.post("/bookmark-post/:id", protectRoute, bookmarkPost)
 router.get("/is-bookmarked/:id", protectRoute, isBookmarked)

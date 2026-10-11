@@ -236,6 +236,44 @@ const getAllPosts = async (req: Request, res: Response): Promise<void> => {
   }
 }
 
+// A user's replies, newest first, each with the post it answers
+// (`parentPost`, null if that post was deleted) for thread-style display.
+const getUserReplies = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await User.findOne({ username: req.params.username })
+    if (!user) {
+      res.status(404).json({ message: "User not found!" })
+      return
+    }
+    const { limit, cursorFilter, sort } = getPagination(req)
+    const replies = await Post.find({
+      user: user._id,
+      parent: { $ne: null },
+      ...cursorFilter,
+    })
+      .sort(sort)
+      .limit(limit + 1)
+      .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+    const { page, nextCursor } = paginate(replies, limit)
+
+    const parents = await Post.find({
+      _id: { $in: page.map((reply) => reply.parent) },
+    }).populate({ path: "user", select: PUBLIC_USER_FIELDS })
+    const parentById = new Map(parents.map((p) => [String(p._id), p]))
+
+    res.status(200).json({
+      message: "User replies fetched successfully!",
+      userReplies: page.map((reply) => ({
+        ...reply.toObject(),
+        parentPost: parentById.get(String(reply.parent)) ?? null,
+      })),
+      nextCursor,
+    })
+  } catch (error) {
+    errorHandler(res, error)
+  }
+}
+
 const getLikedPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username } = req.params
@@ -558,6 +596,7 @@ export {
   likeUnlikePost,
   getAllPosts,
   getLikedPosts,
+  getUserReplies,
   getFollowingPosts,
   getUserPosts,
   editPost,
