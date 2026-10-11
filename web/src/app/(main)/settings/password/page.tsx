@@ -75,7 +75,7 @@ const PasswordPage = () => {
 
   return (
     <MainWrapper>
-      <PageHead title="Password Settings / Cuez" />
+      <PageHead title="Password / Cuez" />
       <Header title="Password" />
 
       <div className="flex flex-col p-4">

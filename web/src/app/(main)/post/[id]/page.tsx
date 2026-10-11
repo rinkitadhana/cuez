@@ -187,7 +187,13 @@ const PostPage = () => {
   return (
     <MainWrapper>
       <PageHead
-        title={`${post?.post?.user?.fullName} on Cuez: "${post?.post?.text}"`}
+        title={
+          post?.post
+            ? `${post.post.user?.fullName || "Someone"} on Cuez${
+                post.post.text ? `: "${post.post.text.slice(0, 60)}"` : ""
+              }`
+            : "Post / Cuez"
+        }
       />
       <Header title="Post" />
       {post?.post ? (

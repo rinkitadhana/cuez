@@ -59,7 +59,13 @@ const UserProfile = () => {
 
   return (
     <MainWrapper>
-      <PageHead title={`${user?.fullName} (${user?.username}) / Cuez`} />
+      <PageHead
+        title={
+          user
+            ? `${user.fullName || user.username} (@${user.username}) / Cuez`
+            : "Profile / Cuez"
+        }
+      />
       <div>
         <Header />
         {isLoading ? (

@@ -103,7 +103,7 @@ const HandlePage = () => {
 
   return (
     <MainWrapper>
-      <PageHead title="Handle / Cuez" />
+      <PageHead title="Username / Cuez" />
       <Header title="Username" />
 
       <div className="flex flex-col px-6 py-4">

@@ -52,7 +52,7 @@ const SettingsPage = () => {
   ]
   return (
     <MainWrapper>
-      <PageHead title="Settings" />
+      <PageHead title="Settings / Cuez" />
       <Header title="Settings" />
       <div className="flex items-center justify-center py-8 border-b border-zinc-700">
         {isLoading ? (
