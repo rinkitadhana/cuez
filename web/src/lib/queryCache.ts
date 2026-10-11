@@ -19,6 +19,7 @@ const POST_QUERY_KEYS = [
   "post",
   "parent-thread",
   "search-posts",
+  "user-replies",
 ]
 export const postQueries = {
   predicate: (query: Query) =>
@@ -35,12 +36,12 @@ const isPost = (value: unknown): value is Post =>
 // Walks any cached response shape (infinite pages, { post }, { thread }) and
 // applies fn to each post. Returning null from fn drops the post from lists.
 const mapPosts = (value: unknown, fn: (post: Post) => Post | null): unknown => {
-  if (isPost(value)) return fn(value) ?? value
+  if (isPost(value)) return withParent(fn(value) ?? value, fn)
   if (Array.isArray(value)) {
     return value.flatMap((item) => {
       if (isPost(item)) {
         const next = fn(item)
-        return next ? [next] : []
+        return next ? [withParent(next, fn)] : []
       }
       return [mapPosts(item, fn)]
     })
@@ -52,6 +53,11 @@ const mapPosts = (value: unknown, fn: (post: Post) => Post | null): unknown => {
   }
   return value
 }
+
+// Replies on a profile carry the post they answer; keep it in sync too
+// (a deleted parent becomes null).
+const withParent = (post: Post, fn: (post: Post) => Post | null): Post =>
+  post.parentPost ? { ...post, parentPost: fn(post.parentPost) } : post
 
 export const updatePosts = (
   queryClient: QueryClient,

@@ -16,4 +16,7 @@ export const postSchema = z.object({
   editedAt: z.string().optional(),
 })
 
-export type Post = z.infer<typeof postSchema>
+export type Post = z.infer<typeof postSchema> & {
+  // On a profile's Replies tab: the post being replied to (null if deleted).
+  parentPost?: Post | null
+}

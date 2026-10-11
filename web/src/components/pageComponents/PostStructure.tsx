@@ -134,7 +134,9 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
     <section
       onClick={() => router.push(`/post/${post._id}`)}
       ref={postRef}
-      className={`flex relative flex-col gap-3 border-b border-zinc-700 hover:bg-zinc-900 transition-all duration-200 cursor-pointer p-4 ${
+      className={`flex relative flex-col gap-3 ${
+        inThread ? "" : "border-b border-zinc-700"
+      } hover:bg-zinc-900 transition-all duration-200 cursor-pointer p-4 ${
         inThread ? "thread-post" : ""
       } ${inThread ? "has-connector" : ""} ${
         isOptimistic ? "opacity-60 pointer-events-none" : ""

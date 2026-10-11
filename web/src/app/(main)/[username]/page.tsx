@@ -10,6 +10,7 @@ import { useStartConversation } from "@/hooks/useChat"
 import { useGetMe } from "@/hooks/useAuth"
 import GetUserPost from "./profileComponent/GetUserPost"
 import GetLikedPost from "./profileComponent/GetLikedPost"
+import GetUserReplies from "./profileComponent/GetUserReplies"
 import { useState } from "react"
 import ProfileSkeleton from "@/components/skeletons/ProfileSkeleton"
 import NoUser from "@/components/notAvailable/NoUser"
@@ -209,26 +210,30 @@ const UserProfile = () => {
               </div>
             </div>
             <div className="flex items-center justify-center mt-3  py-2.5 border-b border-zinc-700">
-              <div className="flex border items-center rounded-xl w-fit border-zinc-700 select-none">
-                <button
-                  onClick={() => setResponse("user-posts")}
-                  className={`${
-                    response === "user-posts" && "bg-zinc-800"
-                  } px-4 py-1 font-medium bg-bgClr border-r border-zinc-700 text-sm hover:bg-zinc-800 rounded-l-xl cursor-pointer transition-all duration-200`}
-                >
-                  Posts
-                </button>
-                <button
-                  onClick={() => setResponse("liked-posts")}
-                  className={`${
-                    response === "liked-posts" && "bg-zinc-800"
-                  } px-4 py-1 font-medium bg-bgClr hover:bg-zinc-800 text-sm rounded-r-xl cursor-pointer transition-all duration-200`}
-                >
-                  Likes
-                </button>
+              <div className="flex border items-center rounded-xl w-fit border-zinc-700 select-none overflow-hidden">
+                {[
+                  { id: "user-posts", label: "Posts" },
+                  { id: "user-replies", label: "Replies" },
+                  { id: "liked-posts", label: "Likes" },
+                ].map((tab, i) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setResponse(tab.id)}
+                    className={`px-4 py-1 font-medium text-sm cursor-pointer transition-all duration-200 ${
+                      i > 0 ? "border-l border-zinc-700" : ""
+                    } ${
+                      response === tab.id
+                        ? "bg-zinc-800"
+                        : "bg-bgClr hover:bg-zinc-800"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
             </div>
             {response === "user-posts" && <GetUserPost />}
+            {response === "user-replies" && <GetUserReplies />}
             {response === "liked-posts" && <GetLikedPost />}
           </>
         )}

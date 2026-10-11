@@ -277,6 +277,15 @@ export const useGetUserPosts = (username: string) => {
   })
 }
 
+export const useGetUserReplies = (username: string) => {
+  return useInfiniteList<Post, "userReplies">({
+    queryKey: ["user-replies", username],
+    path: `/post/user-replies/${username}`,
+    itemsKey: "userReplies",
+    enabled: !!username,
+  })
+}
+
 export const useGetLikedPosts = (username: string) => {
   return useInfiniteList<Post, "likedPosts">({
     queryKey: ["liked-posts", username],
@@ -402,6 +411,11 @@ export const useCreateReply = () => {
     onSettled: (_, __, { parentId }) => {
       queryClient.invalidateQueries({ queryKey: ["replies", parentId] })
       queryClient.invalidateQueries({ queryKey: ["reply-count", parentId] })
+      // Your Replies tab picks it up next time it's opened.
+      queryClient.invalidateQueries({
+        queryKey: ["user-replies", getMe(queryClient)?.username],
+        refetchType: "none",
+      })
     },
   })
 }
