@@ -4,6 +4,9 @@ import { errorHandler } from "../utils/errorHandler"
 import Post from "../models/post-model"
 import { uploadToR2, deleteFromR2 } from "../utils/storage"
 import Notification from "../models/notification-model"
+import { getPagination, paginate } from "../utils/pagination"
+
+const PUBLIC_USER_FIELDS = "-password -email -bookmarks"
 
 const createPost = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -219,17 +222,15 @@ const likeUnlikePost = async (req: Request, res: Response): Promise<void> => {
 
 const getAllPosts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const posts = await Post.find({ parent: null })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password -email -bookmarks",
-      })
-    if (posts.length === 0) {
-      res.status(404).json({ message: "No posts found!" })
-      return
-    }
-    res.status(200).json({ message: "Got all posts successfully", posts })
+    const { limit, cursorFilter, sort } = getPagination(req)
+    const posts = await Post.find({ parent: null, ...cursorFilter })
+      .sort(sort)
+      .limit(limit + 1)
+      .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+    const { page, nextCursor } = paginate(posts, limit)
+    res
+      .status(200)
+      .json({ message: "Got all posts successfully", posts: page, nextCursor })
   } catch (error) {
     errorHandler(res, error)
   }
@@ -243,15 +244,20 @@ const getLikedPosts = async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ message: "User not found!" })
       return
     }
-    const likedPosts = await Post.find({ _id: { $in: user.likedPosts } })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password -email -bookmarks",
-      })
-    res
-      .status(200)
-      .json({ message: "Liked posts fetched successfully!", likedPosts })
+    const { limit, cursorFilter, sort } = getPagination(req)
+    const likedPosts = await Post.find({
+      _id: { $in: user.likedPosts },
+      ...cursorFilter,
+    })
+      .sort(sort)
+      .limit(limit + 1)
+      .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+    const { page, nextCursor } = paginate(likedPosts, limit)
+    res.status(200).json({
+      message: "Liked posts fetched successfully!",
+      likedPosts: page,
+      nextCursor,
+    })
   } catch (error) {
     errorHandler(res, error)
   }
@@ -268,29 +274,26 @@ const getFollowingPosts = async (
       res.status(404).json({ message: "User not found!" })
       return
     }
+    const { limit, cursorFilter, sort } = getPagination(req)
     const followingPosts = await Post.find({
       user: { $in: user.followings },
       parent: null, // Only get top-level posts
+      ...cursorFilter,
     })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password -email -bookmarks",
-      })
-    if (followingPosts.length === 0) {
-      res
-        .status(200)
-        .json({ message: "No posts from following users!", posts: [] })
-      return
-    }
+      .sort(sort)
+      .limit(limit + 1)
+      .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+    const { page, nextCursor } = paginate(followingPosts, limit)
     res.status(200).json({
       message: "Following posts fetched successfully!",
-      posts: followingPosts,
+      posts: page,
+      nextCursor,
     })
   } catch (error) {
     errorHandler(res, error)
   }
 }
+
 const getTrendingPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const trendingPosts = await Post.aggregate([
@@ -336,18 +339,21 @@ const getUserPosts = async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ message: "User not found!" })
       return
     }
+    const { limit, cursorFilter, sort } = getPagination(req)
     const userPosts = await Post.find({
       user: user._id,
       parent: null, // Only get top-level posts
+      ...cursorFilter,
     })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password -email -bookmarks",
-      })
-    res
-      .status(200)
-      .json({ message: "User posts fetched successfully!", userPosts })
+      .sort(sort)
+      .limit(limit + 1)
+      .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+    const { page, nextCursor } = paginate(userPosts, limit)
+    res.status(200).json({
+      message: "User posts fetched successfully!",
+      userPosts: page,
+      nextCursor,
+    })
   } catch (error) {
     errorHandler(res, error)
   }
@@ -381,17 +387,10 @@ const getPostById = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    const replies = await Post.find({ parent: post._id })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password -email -bookmarks",
-      })
-
+    // Replies are loaded separately (and paginated) via /replies/:postId.
     res.status(200).json({
       message: "Post found",
       post,
-      replies,
     })
   } catch (error) {
     errorHandler(res, error)
@@ -470,20 +469,19 @@ const getBookmarkedPosts = async (
       res.status(404).json({ message: "User not found!" })
       return
     }
-    const bookmarkedPosts = await Post.find({ _id: { $in: user.bookmarks } })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password -email -bookmarks",
-      })
-
-    if (bookmarkedPosts.length === 0) {
-      res.status(200).json({ message: "No bookmarked posts found!", posts: [] })
-      return
-    }
+    const { limit, cursorFilter, sort } = getPagination(req)
+    const bookmarkedPosts = await Post.find({
+      _id: { $in: user.bookmarks },
+      ...cursorFilter,
+    })
+      .sort(sort)
+      .limit(limit + 1)
+      .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+    const { page, nextCursor } = paginate(bookmarkedPosts, limit)
     res.status(200).json({
       message: "Bookmarked posts fetched successfully!",
-      posts: bookmarkedPosts,
+      posts: page,
+      nextCursor,
     })
   } catch (error) {
     errorHandler(res, error)
@@ -500,21 +498,16 @@ const getReplies = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    const replies = await Post.find({ parent: postId })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password -email -bookmarks",
-      })
-
-    if (replies.length === 0) {
-      res.status(200).json({ message: "No replies found!", replies: [] })
-      return
-    }
-
+    const { limit, cursorFilter, sort } = getPagination(req)
+    const replies = await Post.find({ parent: postId, ...cursorFilter })
+      .sort(sort)
+      .limit(limit + 1)
+      .populate({ path: "user", select: PUBLIC_USER_FIELDS })
+    const { page, nextCursor } = paginate(replies, limit)
     res.status(200).json({
       message: "Replies fetched successfully!",
-      replies,
+      replies: page,
+      nextCursor,
     })
   } catch (error) {
     errorHandler(res, error)

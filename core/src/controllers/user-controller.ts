@@ -4,6 +4,7 @@ import { Request, Response } from "express"
 import { uploadToR2, deleteFromR2 } from "../utils/storage"
 import Notification from "../models/notification-model"
 import bcrypt from "bcrypt"
+import { getPagination, paginate } from "../utils/pagination"
 
 const getUserProfile = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -210,11 +211,18 @@ const getFollowings = async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ message: "User not found!" })
       return
     }
-    const followingsDetails = await User.find({
+    const { limit, cursorFilter, sort } = getPagination(req)
+    const users = await User.find({
       _id: { $in: user.followings },
-    }).select("-password -email -bookmarks")
+      ...cursorFilter,
+    })
+      .select("-password -email -bookmarks")
+      .sort(sort)
+      .limit(limit + 1)
+    const { page, nextCursor } = paginate(users, limit)
     res.status(200).json({
-      followings: followingsDetails,
+      followings: page,
+      nextCursor,
       message: "Followings fetched successfully!",
     })
   } catch (error) {
@@ -229,11 +237,18 @@ const getFollowers = async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ message: "User not found!" })
       return
     }
-    const followersDetails = await User.find({
+    const { limit, cursorFilter, sort } = getPagination(req)
+    const users = await User.find({
       _id: { $in: user.followers },
-    }).select("-password -email -bookmarks")
+      ...cursorFilter,
+    })
+      .select("-password -email -bookmarks")
+      .sort(sort)
+      .limit(limit + 1)
+    const { page, nextCursor } = paginate(users, limit)
     res.status(200).json({
-      followers: followersDetails,
+      followers: page,
+      nextCursor,
       message: "Followers fetched successfully!",
     })
   } catch (error) {
