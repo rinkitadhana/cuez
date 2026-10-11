@@ -44,21 +44,26 @@ const scheduleIdleClose = () => {
   idleTimer = setTimeout(closeConnection, IDLE_TIMEOUT_MS)
 }
 
+// Tracks in-flight work so the idle timer only starts once everything is done.
+const beginActivity = () => {
+  activeRequests++
+  if (idleTimer) clearTimeout(idleTimer)
+  let done = false
+  return () => {
+    if (done) return
+    done = true
+    activeRequests--
+    if (activeRequests === 0) scheduleIdleClose()
+  }
+}
+
 // Opens the connection on demand and closes it after a period of inactivity
 export const ensureDB = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  activeRequests++
-  if (idleTimer) clearTimeout(idleTimer)
-  let done = false
-  const finish = () => {
-    if (done) return
-    done = true
-    activeRequests--
-    if (activeRequests === 0) scheduleIdleClose()
-  }
+  const finish = beginActivity()
   res.on("finish", finish)
   res.on("close", finish)
 
@@ -68,6 +73,17 @@ export const ensureDB = async (
   } catch (error) {
     console.log("MongoDB Error: ", error)
     res.status(503).json({ message: "Database unavailable" })
+  }
+}
+
+// Same as ensureDB, for work outside an HTTP request (e.g. socket events).
+export const ensureDBFor = async <T>(work: () => Promise<T>): Promise<T> => {
+  const finish = beginActivity()
+  try {
+    await openConnection()
+    return await work()
+  } finally {
+    finish()
   }
 }
 

@@ -4,9 +4,9 @@ import mongoose, { FilterQuery } from "mongoose"
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50
 
-// Newest-first keyset pagination on (createdAt, _id).
-// Cursor format: "<createdAt ISO>_<_id>", taken from the last item of a page.
-export const getPagination = <T>(req: Request) => {
+// Newest-first keyset pagination on (<date field>, _id), createdAt by default.
+// Cursor format: "<date ISO>_<_id>", taken from the last item of a page.
+export const getPagination = <T>(req: Request, field = "createdAt") => {
   const limit = Math.min(
     Math.max(parseInt(req.query.limit as string) || DEFAULT_LIMIT, 1),
     MAX_LIMIT
@@ -20,25 +20,31 @@ export const getPagination = <T>(req: Request) => {
     if (!isNaN(date.getTime()) && mongoose.isValidObjectId(id)) {
       const _id = new mongoose.Types.ObjectId(id)
       cursorFilter = {
-        $or: [{ createdAt: { $lt: date } }, { createdAt: date, _id: { $lt: _id } }],
+        $or: [{ [field]: { $lt: date } }, { [field]: date, _id: { $lt: _id } }],
       } as FilterQuery<T>
     }
   }
 
-  return { limit, cursorFilter, sort: { createdAt: -1, _id: -1 } as const }
+  return {
+    limit,
+    cursorFilter,
+    sort: { [field]: -1, _id: -1 } as Record<string, -1>,
+  }
 }
 
 // Call with limit + 1 items fetched; trims the extra and returns the next cursor.
-export const paginate = <T extends { _id: unknown; createdAt?: Date }>(
+export const paginate = <T extends { _id: unknown }>(
   items: T[],
-  limit: number
+  limit: number,
+  field = "createdAt"
 ) => {
   const hasMore = items.length > limit
   const page = hasMore ? items.slice(0, limit) : items
-  const last = page[page.length - 1]
+  const last = page[page.length - 1] as Record<string, unknown> | undefined
+  const date = last?.[field] as Date | undefined
   const nextCursor =
-    hasMore && last?.createdAt
-      ? `${new Date(last.createdAt).toISOString()}_${String(last._id)}`
+    hasMore && last && date
+      ? `${new Date(date).toISOString()}_${String(last._id)}`
       : null
   return { page, nextCursor }
 }

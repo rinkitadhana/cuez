@@ -1,4 +1,5 @@
 import express from "express"
+import http from "http"
 import dotenv from "dotenv"
 import connectDB, { ensureDB } from "./config/database"
 import authRoute from "./routes/auth-route"
@@ -7,6 +8,8 @@ import postRoute from "./routes/post-route"
 import notificationRoute from "./routes/notification-route"
 import feedbackRoute from "./routes/feedback-route"
 import searchRoute from "./routes/search-route"
+import chatRoute from "./routes/chat-route"
+import { initSocket } from "./socket"
 
 import cookieParser from "cookie-parser"
 import cors from "cors"
@@ -46,8 +49,11 @@ app.use("/api/post", postRoute)
 app.use("/api/notification", notificationRoute)
 app.use("/api/feedback", feedbackRoute)
 app.use("/api/search", searchRoute)
+app.use("/api/chat", chatRoute)
 
 //Listening
-app.listen(PORT, () => {
+const server = http.createServer(app)
+initSocket(server)
+server.listen(PORT, () => {
   console.log(`listening on port http://localhost:${PORT}`)
 })
