@@ -15,7 +15,7 @@ const PostButton = () => {
           onClick={(e) => {
             if (!isLoggedIn) {
               e.preventDefault()
-              requireAuth()
+              requireAuth("post")
             }
           }}
           className="bg-mainclr/80 text-white font-semibold p-2.5 rounded-full flex items-center gap-2"

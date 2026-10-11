@@ -270,7 +270,7 @@ const LeftSidebar = () => {
               onClick={(e) => {
                 if (!isLoggedIn && !link.public) {
                   e.preventDefault()
-                  requireAuth()
+                  requireAuth("page")
                 }
               }}
               className="font-medium flex items-center gap-2 py-2.5 group/nav-link"

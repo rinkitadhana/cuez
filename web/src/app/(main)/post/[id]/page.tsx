@@ -125,12 +125,12 @@ const PostPage = () => {
   const handleBookmarkPost = () => {
     if (!post?.post._id) return
     const postId = post.post._id
-    requireAuth(() => bookmarkPost(postId))
+    requireAuth("bookmark", () => bookmarkPost(postId))
   }
   const handleLikeUnlikePost = () => {
     if (!post?.post._id) return
     const postId = post.post._id
-    requireAuth(() => likeUnlikePost(postId))
+    requireAuth("like", () => likeUnlikePost(postId))
   }
 
   const handleShare = async () => {
@@ -250,7 +250,7 @@ const PostPage = () => {
                           ) : (
                             <div
                               onClick={() =>
-                                requireAuth(() =>
+                                requireAuth("follow", () =>
                                   followUnfollowUser(post?.post?.user?._id || "")
                                 )
                               }
@@ -346,7 +346,7 @@ const PostPage = () => {
                     <div className="flex gap-3 items-center">
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => requireAuth(() => setCommentActive(true))}
+                          onClick={() => requireAuth("comment", () => setCommentActive(true))}
                           className="flex items-center gap-1 p-1.5 hover:bg-blue-500/30 group/comment rounded-lg transition-all duration-200"
                         >
                           <BiCommentDetail className="group-hover/comment:scale-[85%] transition-all duration-300" />
@@ -357,7 +357,7 @@ const PostPage = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => requireAuth()}
+                          onClick={() => requireAuth("repost")}
                           className="p-1.5 hover:bg-green-500/30 rounded-lg transition-all group/repost  duration-200"
                         >
                           <HiArrowPathRoundedSquare className="group-hover/repost:rotate-180 transition-all duration-300" />

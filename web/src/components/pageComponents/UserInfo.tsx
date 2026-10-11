@@ -23,7 +23,7 @@ const UserInfo = ({ user }: { user: User }) => {
   const { requireAuth } = useRequireAuth()
   const isLoading = isFollowUnfollowPending || isFollowingLoading
   const handleFollowUnfollowUser = () => {
-    requireAuth(() => followUnfollowUser(user._id))
+    requireAuth("follow", () => followUnfollowUser(user._id))
   }
 
   return (

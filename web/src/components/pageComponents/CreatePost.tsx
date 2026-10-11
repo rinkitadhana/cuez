@@ -199,7 +199,7 @@ const CreatePost = () => {
   return (
     <>
       <button
-        onClick={() => requireAuth(() => setIsModalOpen(true))}
+        onClick={() => requireAuth("post", () => setIsModalOpen(true))}
         className="px-3 flex items-center justify-center gap-2 py-2 rounded-xl bg-mainclr text-white font-semibold hover:bg-mainclr/80 transition-all duration-200"
       >
         <FiFeather size={19} /> Create a post

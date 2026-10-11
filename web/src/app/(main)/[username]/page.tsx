@@ -43,7 +43,7 @@ const UserProfile = () => {
     return date.toLocaleString("en-US", { month: "long", year: "numeric" })
   }
   const handleFollowUnfollow = () => {
-    requireAuth(() => followUnfollowUser(user?._id || ""))
+    requireAuth("follow", () => followUnfollowUser(user?._id || ""))
   }
   const formatLink = (link: string) => {
     if (link.startsWith("https://")) {

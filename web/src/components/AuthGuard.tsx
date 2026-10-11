@@ -29,7 +29,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const { data: me, isPending } = useGetMe()
   const router = useRouter()
   const pathname = usePathname()
-  const { setOpen } = useLoginPromptStore()
+  const { show } = useLoginPromptStore()
 
   const isGuest = !isPending && !me?.user
   const isBlocked = isGuest && isProtectedRoute(pathname)
@@ -37,9 +37,9 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (isBlocked) {
       router.replace("/home")
-      setOpen(true)
+      show("page")
     }
-  }, [isBlocked, router, setOpen])
+  }, [isBlocked, router, show])
 
   if (isPending || isBlocked) {
     return <LoadingScreen />

@@ -96,7 +96,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   }
 
   const handleLikeUnlikePost = () => {
-    requireAuth(() => likeUnlikePost(post._id))
+    requireAuth("like", () => likeUnlikePost(post._id))
   }
 
   const userProfile = () => {
@@ -105,7 +105,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   }
 
   const handleBookmarkPost = () => {
-    requireAuth(() => bookmarkPost(post._id))
+    requireAuth("bookmark", () => bookmarkPost(post._id))
   }
 
   const handleShare = async () => {
@@ -197,7 +197,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                     ) : (
                       <div
                         onClick={() =>
-                          requireAuth(() => followUnfollowUser(post.user._id))
+                          requireAuth("follow", () => followUnfollowUser(post.user._id))
                         }
                       >
                         {isFollowUnfollowPending && (
@@ -300,7 +300,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    requireAuth(() =>
+                    requireAuth("comment", () =>
                       router.push(`/post/${post._id}?focus=comment-input`)
                     )
                   }}
@@ -312,7 +312,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => requireAuth()}
+                  onClick={() => requireAuth("repost")}
                   className="p-1.5 hover:bg-green-500/30 rounded-lg transition-all group/repost  duration-200"
                 >
                   <HiArrowPathRoundedSquare className="group-hover/repost:rotate-180 transition-all duration-300" />

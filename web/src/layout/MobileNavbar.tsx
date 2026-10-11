@@ -169,7 +169,7 @@ const MobileNavbar = () => {
                 onClick={(e) => {
                   if (!isLoggedIn && !link.public) {
                     e.preventDefault()
-                    requireAuth()
+                    requireAuth("page")
                   }
                 }}
                 className={`flex flex-col items-center justify-center py-2.5 px-1 transition-colors ${
