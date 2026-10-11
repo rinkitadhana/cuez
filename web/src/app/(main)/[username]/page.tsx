@@ -73,14 +73,17 @@ const UserProfile = () => {
                 alt="profile"
                 width={1000}
                 height={1000}
+                sizes="(max-width: 768px) 100vw, 640px"
+                priority
                 onClick={() => setIsCoverImageModalOpen(true)}
               />
               <Image
                 src={user?.profileImg || ""}
                 className="absolute -bottom-[60px] bg-white left-5 size-[120px] object-cover rounded-xl border-4 border-bgClr cursor-pointer hover:brightness-90 transition-all duration-200"
                 alt="profile"
-                width={1000}
-                height={1000}
+                width={120}
+                height={120}
+                priority
                 onClick={() => setIsImageModalOpen(true)}
               />
               {!owner && (

@@ -2,7 +2,7 @@
 import { Loader2 } from "lucide-react"
 import { useEffect, useRef } from "react"
 
-const getScrollParent = (el: HTMLElement | null): HTMLElement | null => {
+export const getScrollParent = (el: HTMLElement | null): HTMLElement | null => {
   for (let node = el?.parentElement; node; node = node.parentElement) {
     const { overflowY } = getComputedStyle(node)
     if (overflowY === "auto" || overflowY === "scroll") return node

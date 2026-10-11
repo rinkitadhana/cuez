@@ -36,6 +36,7 @@ import CuezBadge from "@/components/pageComponents/CuezBadge"
 import PageHead from "@/components/pageComponents/PageHead"
 import ParentThread from "@/components/pageComponents/ParentThread"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import LazyVideo from "@/components/LazyVideo"
 
 const PostPage = () => {
   const { id } = useParams()
@@ -318,17 +319,17 @@ const PostPage = () => {
                       <Image
                         src={post?.post?.img}
                         alt="Post image"
-                        width={500}
-                        height={500}
+                        width={600}
+                        height={600}
+                        sizes="(max-width: 768px) 100vw, 600px"
                         className="rounded-lg w-full select-none"
                       />
                     </div>
                   )}
                   {post?.post?.video && (
                     <div>
-                      <video
-                        src={post?.post?.video}
-                        controls
+                      <LazyVideo
+                        src={post.post.video}
                         className="rounded-lg w-full select-none"
                       />
                     </div>

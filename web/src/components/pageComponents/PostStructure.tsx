@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation"
 import EditPost from "./EditPost"
 import { useFollowUnfollowUser, useIsFollowing } from "@/hooks/useUser"
 import CuezBadge from "./CuezBadge"
+import LazyVideo from "../LazyVideo"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 
 interface PostStructureProps {
@@ -158,8 +159,8 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
           }}
           src={post?.user?.profileImg || "/img/pfp/default.webp"}
           alt="user avatar"
-          width={32}
-          height={32}
+          width={40}
+          height={40}
           className="rounded-lg size-10 select-none cursor-pointer bg-white object-cover hover:brightness-90 transition-all duration-200"
           style={
             inThread
@@ -275,6 +276,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
                 src={post.img}
                 alt="Post image"
                 fill
+                sizes="(max-width: 768px) 100vw, 600px"
                 className="object-cover cursor-pointer hover:brightness-90 transition-all duration-200"
               />
             </div>
@@ -282,11 +284,10 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
 
           {post?.video && (
             <div className="my-2">
-              <video
-                controls
-                src={post?.video}
+              <LazyVideo
+                src={post.video}
                 className="rounded-lg w-full select-none h-80 bg-black"
-              ></video>
+              />
             </div>
           )}
 
