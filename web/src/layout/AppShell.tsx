@@ -26,15 +26,23 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <main
-        className={`flex justify-center lg:w-[1200px] w-full mx-auto gap-4 overflow-visible ${
-          hideMobileNav ? "h-dvh md:h-screen" : "h-screen"
-        }`}
+        className={`flex gap-4 overflow-visible w-full ${
+          wide
+            ? // Chat: keep the left sidebar where it is on other pages and let
+              // the chat extend further right (up to 1600px total).
+              "lg:w-auto lg:ml-[max(0px,calc((100vw-1200px)/2))] lg:pr-4 lg:max-w-[1600px]"
+            : "justify-center lg:w-[1200px] mx-auto"
+        } ${hideMobileNav ? "h-dvh md:h-screen" : "h-screen"}`}
       >
-        <div className="lg:w-[17%] md:w-[25%] w-full h-full hidden md:block md:pl-4">
+        <div
+          className={`${
+            wide ? "lg:w-[204px] shrink-0" : "lg:w-[17%]"
+          } md:w-[25%] w-full h-full hidden md:block md:pl-4`}
+        >
           <LeftSidebar />
         </div>
         {wide ? (
-          <div className="relative lg:w-[83%] md:w-full w-full md:border-x md:border-zinc-700 overflow-hidden">
+          <div className="relative flex-1 min-w-0 md:border-x md:border-zinc-700 overflow-hidden">
             {children}
           </div>
         ) : (
