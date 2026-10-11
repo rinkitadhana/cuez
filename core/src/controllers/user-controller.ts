@@ -8,7 +8,7 @@ import bcrypt from "bcrypt"
 const getUserProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username } = req.params
-    const user = await User.findOne({ username }).select("-password")
+    const user = await User.findOne({ username }).select("-password -email -bookmarks")
     if (!user) {
       res.status(404).json({ message: "User not found!" })
       return
@@ -212,7 +212,7 @@ const getFollowings = async (req: Request, res: Response): Promise<void> => {
     }
     const followingsDetails = await User.find({
       _id: { $in: user.followings },
-    }).select("-password")
+    }).select("-password -email -bookmarks")
     res.status(200).json({
       followings: followingsDetails,
       message: "Followings fetched successfully!",
@@ -231,7 +231,7 @@ const getFollowers = async (req: Request, res: Response): Promise<void> => {
     }
     const followersDetails = await User.find({
       _id: { $in: user.followers },
-    }).select("-password")
+    }).select("-password -email -bookmarks")
     res.status(200).json({
       followers: followersDetails,
       message: "Followers fetched successfully!",

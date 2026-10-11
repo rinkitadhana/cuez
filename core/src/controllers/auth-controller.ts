@@ -196,12 +196,14 @@ const resetPassword = async (req: Request, res: Response): Promise<void> => {
 
 const getMe = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = await User.findById(req.user?._id).select("-password")
-    if (!user) {
-      res.status(400).json({ message: "User not found!" })
+    // Guests (or stale tokens) get user: null rather than an error.
+    if (!req.user) {
+      res.status(200).json({ message: "Not logged in", user: null })
       return
     }
-    res.status(200).json({ message: "User fetched successfully!", user })
+    res
+      .status(200)
+      .json({ message: "User fetched successfully!", user: req.user })
   } catch (error) {
     errorHandler(res, error)
   }

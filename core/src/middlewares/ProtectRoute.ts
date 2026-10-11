@@ -49,3 +49,21 @@ export const protectRoute = async (
     return
   }
 }
+
+// Like protectRoute, but lets guests through with req.user unset.
+export const optionalAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const token = req.cookies.jwt
+    if (token) {
+      const decode = jwt.verify(token, JWT_SECRET) as { userId: string }
+      req.user = await User.findById(decode.userId).select("-password")
+    }
+  } catch {
+    // Invalid or expired token: treat as a guest.
+  }
+  next()
+}

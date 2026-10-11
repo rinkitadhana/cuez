@@ -12,7 +12,7 @@ const getNotifications = async (req: Request, res: Response): Promise<void> => {
     const notifications = await Notification.find({ to: userId })
       .populate({
         path: "from",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
       .populate("post", "text img video")
       .sort({ createdAt: -1 })

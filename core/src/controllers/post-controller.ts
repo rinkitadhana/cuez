@@ -223,7 +223,7 @@ const getAllPosts = async (req: Request, res: Response): Promise<void> => {
       .sort({ createdAt: -1 })
       .populate({
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
     if (posts.length === 0) {
       res.status(404).json({ message: "No posts found!" })
@@ -247,7 +247,7 @@ const getLikedPosts = async (req: Request, res: Response): Promise<void> => {
       .sort({ createdAt: -1 })
       .populate({
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
     res
       .status(200)
@@ -275,7 +275,7 @@ const getFollowingPosts = async (
       .sort({ createdAt: -1 })
       .populate({
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
     if (followingPosts.length === 0) {
       res
@@ -310,7 +310,7 @@ const getTrendingPosts = async (req: Request, res: Response): Promise<void> => {
     const populatedPosts = await Post.populate(trendingPosts, [
       {
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       },
     ])
 
@@ -343,7 +343,7 @@ const getUserPosts = async (req: Request, res: Response): Promise<void> => {
       .sort({ createdAt: -1 })
       .populate({
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
     res
       .status(200)
@@ -373,7 +373,7 @@ const getPostById = async (req: Request, res: Response): Promise<void> => {
   try {
     const post = await Post.findById(req.params.id).populate({
       path: "user",
-      select: "-password",
+      select: "-password -email -bookmarks",
     })
 
     if (!post) {
@@ -385,7 +385,7 @@ const getPostById = async (req: Request, res: Response): Promise<void> => {
       .sort({ createdAt: -1 })
       .populate({
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
 
     res.status(200).json({
@@ -474,7 +474,7 @@ const getBookmarkedPosts = async (
       .sort({ createdAt: -1 })
       .populate({
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
 
     if (bookmarkedPosts.length === 0) {
@@ -504,7 +504,7 @@ const getReplies = async (req: Request, res: Response): Promise<void> => {
       .sort({ createdAt: -1 })
       .populate({
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
 
     if (replies.length === 0) {
@@ -552,7 +552,7 @@ const getParentThread = async (req: Request, res: Response): Promise<void> => {
     while (currentPost && currentPost.parent) {
       currentPost = await Post.findById(currentPost.parent).populate({
         path: "user",
-        select: "-password",
+        select: "-password -email -bookmarks",
       })
 
       if (currentPost) {
