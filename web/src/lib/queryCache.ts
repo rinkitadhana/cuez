@@ -54,10 +54,14 @@ const mapPosts = (value: unknown, fn: (post: Post) => Post | null): unknown => {
   return value
 }
 
-// Replies on a profile carry the post they answer; keep it in sync too
-// (a deleted parent becomes null).
-const withParent = (post: Post, fn: (post: Post) => Post | null): Post =>
-  post.parentPost ? { ...post, parentPost: fn(post.parentPost) } : post
+// Replies on a profile carry the post they answer, and repost entries carry
+// the original; keep those in sync too (a deleted one becomes null).
+const withParent = (post: Post, fn: (post: Post) => Post | null): Post => {
+  let next = post
+  if (next.parentPost) next = { ...next, parentPost: fn(next.parentPost) }
+  if (next.repostOf) next = { ...next, repostOf: fn(next.repostOf) }
+  return next
+}
 
 export const updatePosts = (
   queryClient: QueryClient,

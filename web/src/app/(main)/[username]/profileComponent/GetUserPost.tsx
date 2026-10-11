@@ -1,4 +1,4 @@
-import PostStructure from "@/components/pageComponents/PostStructure"
+import PostItem from "@/components/pageComponents/PostItem"
 import { useGetUserPosts } from "@/hooks/usePost"
 import { useParams } from "next/navigation"
 import PostSkeleton from "@/components/skeletons/PostSkeleton"
@@ -33,7 +33,7 @@ const GetUserPost = () => {
   return (
     <div>
       {items.map((post) => (
-        <PostStructure key={post._id} post={post} />
+        <PostItem key={post._id} post={post} />
       ))}
       <LoadMore
         hasNextPage={hasNextPage}

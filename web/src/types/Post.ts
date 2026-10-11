@@ -19,4 +19,8 @@ export const postSchema = z.object({
 export type Post = z.infer<typeof postSchema> & {
   // On a profile's Replies tab: the post being replied to (null if deleted).
   parentPost?: Post | null
+  // Users who reposted this post.
+  reposts?: string[]
+  // On a repost entry (profile / Following feed): the original post.
+  repostOf?: Post | null
 }

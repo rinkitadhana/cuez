@@ -18,6 +18,7 @@ import {
   toggleId,
   updateMe,
   updatePost,
+  updatePosts,
 } from "@/lib/queryCache"
 
 interface MessageResponse {
@@ -247,6 +248,58 @@ export const useLikeUnlikePost = () => {
       // Your Likes tab picks this up next time it's opened.
       queryClient.invalidateQueries({
         queryKey: ["liked-posts", context?.username],
+        refetchType: "none",
+      })
+    },
+  })
+}
+
+const repostPost = async (postId: string) => {
+  const { data } = await axios.post<MessageResponse>(
+    config.backendUrl + `/post/repost-post/${postId}`,
+    {},
+    { withCredentials: true }
+  )
+  return data
+}
+
+export const useRepostPost = () => {
+  const { setMessage } = useMessageStore()
+  const queryClient = useQueryClient()
+  return useMutation<
+    MessageResponse,
+    AxiosError,
+    string,
+    { snap?: Snapshot; username?: string }
+  >({
+    mutationFn: repostPost,
+    onMutate: async (postId) => {
+      const me = getMe(queryClient)
+      if (!me) return {}
+      const snap = await snapshot(queryClient, [postQueries])
+      const reposting = !findPost(queryClient, postId)?.reposts?.includes(me._id)
+      updatePost(queryClient, postId, (post) => ({
+        ...post,
+        reposts: toggleId(post.reposts, me._id, reposting),
+      }))
+      if (!reposting) {
+        // Take my repost entry out of feeds and my profile right away.
+        updatePosts(queryClient, (post) =>
+          post.repostOf?._id === postId && post.user?._id === me._id
+            ? null
+            : post
+        )
+      }
+      return { snap, username: me.username }
+    },
+    onError: (error, _, context) => {
+      restore(queryClient, context?.snap)
+      setMessage(errorMessage(error, "Repost failed!"), "error")
+    },
+    onSettled: (_, __, ___, context) => {
+      // My profile shows the repost next time it's opened.
+      queryClient.invalidateQueries({
+        queryKey: ["user-posts", context?.username],
         refetchType: "none",
       })
     },

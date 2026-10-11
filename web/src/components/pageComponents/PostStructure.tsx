@@ -12,6 +12,7 @@ import {
   useBookmarkPost,
   useDeletePost,
   useLikeUnlikePost,
+  useRepostPost,
   useGetReplyCount,
 } from "@/hooks/usePost"
 import { X } from "lucide-react"
@@ -41,6 +42,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   const { requireAuth } = useRequireAuth()
   const { mutate: deletePost } = useDeletePost()
   const { mutate: likeUnlikePost } = useLikeUnlikePost()
+  const { mutate: repostPost } = useRepostPost()
   const { mutate: bookmarkPost } = useBookmarkPost()
   const { data: replyCount } = useGetReplyCount(post._id)
   const { mutate: followUnfollowUser } = useFollowUnfollowUser()
@@ -48,6 +50,7 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
   const meId = authUser?.user._id
   const isOwner = !!meId && meId === post?.user?._id
   const isLiked = !!meId && post.likes.includes(meId)
+  const isReposted = !!meId && !!post.reposts?.includes(meId)
   const isBookmarked = !!meId && post.bookmarks.includes(meId)
   const isFollowing =
     !!post?.user?._id && !!authUser?.user.followings.includes(post.user._id)
@@ -278,12 +281,23 @@ const PostStructure = ({ post, inThread = false }: PostStructureProps) => {
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => requireAuth("repost")}
+                  onClick={() =>
+                    requireAuth("repost", () => repostPost(post._id))
+                  }
+                  aria-label={isReposted ? "Undo repost" : "Repost"}
                   className="p-1.5 hover:bg-green-500/30 rounded-lg transition-all group/repost  duration-200"
                 >
-                  <HiArrowPathRoundedSquare className="group-hover/repost:rotate-180 transition-all duration-300" />
+                  <HiArrowPathRoundedSquare
+                    className={`group-hover/repost:rotate-180 transition-all duration-300 ${
+                      isReposted ? "text-green-500" : ""
+                    }`}
+                  />
                 </button>
-                <span className="text-sm">0</span>
+                <span
+                  className={`text-sm ${isReposted ? "text-green-500" : ""}`}
+                >
+                  {post.reposts?.length ?? 0}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <button

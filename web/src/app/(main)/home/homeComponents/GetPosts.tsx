@@ -1,5 +1,5 @@
 "use client"
-import PostStructure from "@/components/pageComponents/PostStructure"
+import PostItem from "@/components/pageComponents/PostItem"
 import { useGetPosts } from "@/hooks/usePost"
 import PostSkeleton from "@/components/skeletons/PostSkeleton"
 import NoPosts from "@/components/notAvailable/NoPosts"
@@ -19,7 +19,7 @@ const GetPosts = () => {
       ) : items.length > 0 ? (
         <>
           {items.map((post) => (
-            <PostStructure key={post._id} post={post} />
+            <PostItem key={post._id} post={post} />
           ))}
           <LoadMore
             hasNextPage={hasNextPage}
