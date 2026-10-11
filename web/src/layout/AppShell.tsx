@@ -35,9 +35,10 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
         } ${hideMobileNav ? "h-dvh md:h-screen" : "h-screen"}`}
       >
         <div
-          className={`${
-            wide ? "lg:w-[204px] shrink-0" : "lg:w-[17%]"
-          } md:w-[25%] w-full h-full hidden md:block md:pl-4`}
+          // Keep this column the same width on every desktop route. The
+          // non-chat columns used to shrink to make room for the right
+          // sidebar, moving the center border a few pixels on navigation.
+          className="lg:w-[204px] shrink-0 md:w-[25%] w-full h-full hidden md:block md:pl-4"
         >
           <LeftSidebar />
         </div>
