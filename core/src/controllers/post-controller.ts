@@ -181,40 +181,40 @@ const deletePost = async (req: Request, res: Response): Promise<void> => {
 
 const likeUnlikePost = async (req: Request, res: Response): Promise<void> => {
   try {
-    const post = await Post.findById(req.params.id)
-    const userId = req.user._id.toString()
+    const userId = req.user._id
+    const post = await Post.findById(req.params.id).select("user")
     if (!post) {
       res.status(404).json({ message: "Post not found!" })
       return
     }
-    const userLikedPost = post.likes.includes(userId)
-    if (userLikedPost) {
-      await Post.updateOne({ _id: req.params.id }, { $pull: { likes: userId } })
+    // Atomic toggle: add only if absent, otherwise remove. Keeps likes
+    // consistent when the client fires rapid optimistic clicks.
+    const added = await Post.updateOne(
+      { _id: post._id, likes: { $ne: userId } },
+      { $addToSet: { likes: userId } }
+    )
+    if (added.modifiedCount === 0) {
+      await Post.updateOne({ _id: post._id }, { $pull: { likes: userId } })
       await User.updateOne({ _id: userId }, { $pull: { likedPosts: post._id } })
       await Notification.deleteMany({
         from: userId,
-        to: post.user.toString(),
+        to: post.user,
         type: "like",
         post: post._id,
       })
-      res.status(200).json({ message: "Post unliked successfully!" })
+      res.status(200).json({ message: "Post unliked successfully!", liked: false })
       return
-    } else {
-      await Post.updateOne({ _id: req.params.id }, { $push: { likes: userId } })
-      await User.updateOne({ _id: userId }, { $push: { likedPosts: post._id } })
-
-      if (userId !== post.user.toString()) {
-        const notification = new Notification({
-          from: userId,
-          to: post.user.toString(),
-          type: "like",
-          post: post._id,
-        })
-        await notification.save()
-      }
-
-      res.status(200).json({ message: "Post liked successfully!" })
     }
+    await User.updateOne({ _id: userId }, { $addToSet: { likedPosts: post._id } })
+    if (userId.toString() !== post.user.toString()) {
+      await Notification.create({
+        from: userId,
+        to: post.user,
+        type: "like",
+        post: post._id,
+      })
+    }
+    res.status(200).json({ message: "Post liked successfully!", liked: true })
   } catch (error) {
     errorHandler(res, error)
   }
@@ -399,40 +399,29 @@ const getPostById = async (req: Request, res: Response): Promise<void> => {
 
 const bookmarkPost = async (req: Request, res: Response): Promise<void> => {
   try {
-    const post = await Post.findById(req.params.id)
-    const user = await User.findById(req.user._id.toString())
+    const userId = req.user._id
+    const post = await Post.findById(req.params.id).select("_id")
     if (!post) {
       res.status(404).json({ message: "Post not found!" })
       return
     }
-    if (!user) {
-      res.status(404).json({ message: "User not found!" })
+    // Atomic toggle, same as likes.
+    const added = await Post.updateOne(
+      { _id: post._id, bookmarks: { $ne: userId } },
+      { $addToSet: { bookmarks: userId } }
+    )
+    if (added.modifiedCount === 0) {
+      await Post.updateOne({ _id: post._id }, { $pull: { bookmarks: userId } })
+      await User.updateOne({ _id: userId }, { $pull: { bookmarks: post._id } })
+      res
+        .status(200)
+        .json({ message: "Post unbookmarked successfully!", bookmarked: false })
       return
     }
-    const isBookmarked = post.bookmarks.includes(req.user._id.toString())
-    if (isBookmarked) {
-      await Post.updateOne(
-        { _id: req.params.id },
-        { $pull: { bookmarks: req.user._id.toString() } }
-      )
-      await User.updateOne(
-        { _id: req.user._id.toString() },
-        { $pull: { bookmarks: post._id } }
-      )
-      res.status(200).json({ message: "Post unbookmarked successfully!" })
-      return
-    } else {
-      await Post.updateOne(
-        { _id: req.params.id },
-        { $push: { bookmarks: req.user._id.toString() } }
-      )
-      await User.updateOne(
-        { _id: req.user._id.toString() },
-        { $push: { bookmarks: post._id } }
-      )
-      res.status(200).json({ message: "Post bookmarked successfully!" })
-      return
-    }
+    await User.updateOne({ _id: userId }, { $addToSet: { bookmarks: post._id } })
+    res
+      .status(200)
+      .json({ message: "Post bookmarked successfully!", bookmarked: true })
   } catch (error) {
     errorHandler(res, error)
   }

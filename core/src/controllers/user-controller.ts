@@ -28,41 +28,54 @@ const followUnfollowUser = async (
 ): Promise<void> => {
   try {
     const { id } = req.params
-    const userToModify = await User.findById(id)
-    const currentUser = await User.findById(req.user._id)
-
-    if (!userToModify || !currentUser) {
-      res.status(404).json({ message: "User not found!" })
-      return
-    }
-    if (id == req.user._id.toString()) {
+    const myId = req.user._id
+    if (id == myId.toString()) {
       res.status(400).json({ message: "You cannot follow/unfollow yourself!" })
       return
     }
-    const isFollowing = currentUser.followings.includes(id as unknown as IUser)
-    if (isFollowing) {
-      await User.findByIdAndUpdate(id, { $pull: { followers: req.user._id } })
-      await User.findByIdAndUpdate(req.user._id, { $pull: { followings: id } })
-      res.status(200).json({ message: "User unfollowed successfully!" })
-      await Notification.deleteMany({
-        from: req.user._id,
-        to: id,
-        type: "follow",
-        post: null,
-      })
+    const userToModify = await User.findById(id).select("_id")
+    if (!userToModify) {
+      res.status(404).json({ message: "User not found!" })
       return
-    } else {
-      await User.findByIdAndUpdate(id, { $push: { followers: req.user._id } })
-      await User.findByIdAndUpdate(req.user._id, { $push: { followings: id } })
-      res.status(200).json({ message: "User followed successfully!" })
-      const notification = new Notification({
-        from: req.user._id,
-        to: id,
+    }
+    // Atomic toggle so rapid optimistic clicks can't double-follow.
+    const added = await User.updateOne(
+      { _id: myId, followings: { $ne: userToModify._id } },
+      { $addToSet: { followings: userToModify._id } }
+    )
+    if (added.modifiedCount === 0) {
+      await User.updateOne(
+        { _id: myId },
+        { $pull: { followings: userToModify._id } }
+      )
+      await User.updateOne(
+        { _id: userToModify._id },
+        { $pull: { followers: myId } }
+      )
+      await Notification.deleteMany({
+        from: myId,
+        to: userToModify._id,
         type: "follow",
         post: null,
       })
-      await notification.save()
+      res
+        .status(200)
+        .json({ message: "User unfollowed successfully!", following: false })
+      return
     }
+    await User.updateOne(
+      { _id: userToModify._id },
+      { $addToSet: { followers: myId } }
+    )
+    await Notification.create({
+      from: myId,
+      to: userToModify._id,
+      type: "follow",
+      post: null,
+    })
+    res
+      .status(200)
+      .json({ message: "User followed successfully!", following: true })
   } catch (error) {
     errorHandler(res, error)
   }
