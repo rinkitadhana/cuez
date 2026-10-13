@@ -9,6 +9,7 @@ import notificationRoute from "./routes/notification-route"
 import feedbackRoute from "./routes/feedback-route"
 import searchRoute from "./routes/search-route"
 import chatRoute from "./routes/chat-route"
+import { adminRoutes } from "./admin"
 import { initSocket } from "./socket"
 
 import cookieParser from "cookie-parser"
@@ -50,6 +51,7 @@ app.use("/api/notification", notificationRoute)
 app.use("/api/feedback", feedbackRoute)
 app.use("/api/search", searchRoute)
 app.use("/api/chat", chatRoute)
+app.use("/admin/v1", adminRoutes)
 
 //Listening
 const server = http.createServer(app)

@@ -133,6 +133,10 @@ const loginUser = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ message: "Invalid password!" })
       return
     }
+    if (user.bannedAt) {
+      res.status(403).json({ message: "This account has been suspended." })
+      return
+    }
     generateJWT(res, String(user._id))
     res.status(200).json({ message: "Login successful!" })
   } catch (error) {

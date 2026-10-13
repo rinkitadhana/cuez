@@ -32,6 +32,10 @@ export const protectRoute = async (
       res.status(401).json({ message: "Not authorized, user not found" })
       return
     }
+    if (user.bannedAt) {
+      res.status(403).json({ message: "This account has been suspended." })
+      return
+    }
     req.user = user
     next()
   } catch (error) {
@@ -60,7 +64,8 @@ export const optionalAuth = async (
     const token = req.cookies.jwt
     if (token) {
       const decode = jwt.verify(token, JWT_SECRET) as { userId: string }
-      req.user = await User.findById(decode.userId).select("-password")
+      const user = await User.findById(decode.userId).select("-password")
+      if (user && !user.bannedAt) req.user = user
     }
   } catch {
     // Invalid or expired token: treat as a guest.

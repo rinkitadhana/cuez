@@ -16,6 +16,8 @@ interface IUser extends Document {
   likedPosts: IPost[]
   location: string
   bookmarks: IPost[]
+  // Set by an admin: the account can't log in or use the API.
+  bannedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -108,6 +110,9 @@ const userSchema = new mongoose.Schema<IUser>(
     cuezBadge: {
       type: Boolean,
       default: false,
+    },
+    bannedAt: {
+      type: Date,
     },
   },
   {

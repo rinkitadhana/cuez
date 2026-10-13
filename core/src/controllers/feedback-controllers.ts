@@ -38,20 +38,4 @@ const createFeedback = async (req: Request, res: Response): Promise<void> => {
   }
 }
 
-const getFeedbacks = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const feedbacks = await Feedback.find()
-      .populate({
-        path: "user",
-        select: "-password",
-      })
-      .sort({ createdAt: -1 })
-    res
-      .status(200)
-      .json({ feedbacks, message: "All Feebacks are fetched sucessfully!" })
-  } catch (error) {
-    errorHandler(res, error)
-  }
-}
-
-export { createFeedback, getFeedbacks }
+export { createFeedback }
